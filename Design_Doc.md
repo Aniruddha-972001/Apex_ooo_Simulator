@@ -4,8 +4,8 @@
 
 ### CPU
 
-- **UCRF (Unified Commit Register File)**: Array of 10 integer entries.
-- **UPRF (Unified Pending Register File)**: Array of 60 integer entries.
+- **UCRF**: Array of 10 integer entries.
+- **UPRF**: Array of 60 integer entries.
 - **Rename Table**: Array of integers, used for register renaming.
 - **Free List (for Rename Table)**: Array of integers representing the free list of registers available for renaming.
 - **Forwarded Registers**: Copy of `UCRF` and `UPRF` to hold the values of forwarded registers. Same size as `UCRF` and `UPRF`.
@@ -15,8 +15,8 @@
 - **Clock Cycles**: Integer tracking the number of clock cycles in the simulation.
 - **Code Memory**: Array of `Instruction` structures representing the instruction memory.
 - **Stalled?**: Boolean flag indicating if the CPU is stalled.
-- **UPRF Locks**: Array of boolean values indicating the lock status of each entry in the `UPRF`.
-- **UCRF Locks**: Array of boolean values indicating the lock status of each entry in the `UCRF`.
+- **UPRF Locks**: Array of semaphores indicating the lock status of each entry in the `UPRF`.
+- **UCRF Locks**: Array of semaphores indicating the lock status of each entry in the `UCRF`.
 - **IRS (Instruction Reservation Station)**: Queue of `IQE` entries representing the reservation station for integer operations.
 - **LSQ (Load/Store Queue)**: Queue of `IQE` entries for managing load and store operations.
 - **MRS (Multiply Reservation Station)**: Queue of `IQE` entries for managing multiply operations.
@@ -111,7 +111,7 @@ Represents a stage in the CPU pipeline.
 
 ### Decode (D2)
 
-- **Description**: Forwards instructions to their respective issue queues. Specifically, forwards instructions to the Reorder Buffer (ROB).
+- **Description**: Forwards instructions to their respective issue queues. Also, forwards instructions to the Reorder Buffer (ROB).
 - **Return Value**: `TODO` (to be determined).
 - **Arguments**: `cpu*` — The current state of the CPU.
 
@@ -183,4 +183,4 @@ Represents a stage in the CPU pipeline.
 
 ## Notes
 
-- All arrays mentioned in this design document are custom data structures that support dynamic resizing when needed.
+- All Arrays/Queues mentioned in this design document are custom data structures that support dynamic resizing when needed.
