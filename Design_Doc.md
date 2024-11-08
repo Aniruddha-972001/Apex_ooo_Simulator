@@ -28,6 +28,9 @@
 - **MUL FU**: Current state of the multiplication functional unit (type: `CPU_STAGE`).
 - **MEM FU**: Current state of the memory functional unit (type: `CPU_STAGE`).
 - **Commit**: Current state of the commit stage (type: `CPU_STAGE`).
+- **Predictor Queue**: Current state of the predictor queue.
+- **Return Stack**: Current state of the Return Stack.
+
 
 ---
 
@@ -59,6 +62,26 @@ Each entry in the instruction queue contains the following information:
 - **Rs3_value**: The value of the third source register.
 - **Imm_value**: The value of the immediate.
 - **Completed**: Boolean flag indicating whether the instruction has completed execution.
+- **Rename Table**: Current state of rename table 
+- **Free List**: Current state of the free list
+- **Forwarded rergister file**: Current state of the forwarded register file
+- **Forwarded rergister locks**: Current state of the forwarded register locks
+- **Predictor Queue**: Current state of the predictor queue.
+- **Return Stack**: Current state of the Return Stack.
+
+
+
+---
+
+### PQE (Prediction Queue Entry)
+- **PC**: Address of the control flow instruction.
+- **Type**: Type of the control flow instruction (Branch ,JALP, RET).
+- **Next_PC**: Address of the predicted next instruction.
+
+---
+
+### RSE (Return Stack Entry)
+- **Return Address**: Calculated address to return to.
 
 ---
 
@@ -103,7 +126,7 @@ Represents a stage in the CPU pipeline.
 
 ### Decode (D1)
 
-- **Description**: Responsible for register renaming and completing the entries in the `IQE`.
+- **Description**: Responsible for register renaming and completing the entries in the `IQE`. If the Instruction was a conditional jump or RET or JALP instruction then we also save the current state of the CPU. This information is stored in the IQE.
 - **Return Value**: `TODO` (to be determined).
 - **Arguments**: `cpu*` — The current state of the CPU.
 
@@ -181,6 +204,18 @@ Represents a stage in the CPU pipeline.
 
 ---
 
+## Flushing of Instructions 
+
+- **Description**: Wheather or not we have to flush an instruction is decided in intFU. When we have to flush we first inform the ROB , the instruction after which we have to flush. ROB will then remove all the instruction after the given one from the queue and also remove them from LSQ,IRS,MRS. Then we update the PC to the correct address and also reset important structures such as rename table , free list , forwarded registers and forwarded register locks.  
+
+
+---
+
+##  Predictor 
+
+-**Description**: The decode stage will add an entry to the predictor queue if the current instruction is a branch or JALP or RET. of, this entry already exists in the predictor queue we do not make any changes. When a branch or JALP or RET instructions next address is calculated in the intFU we update the `next_PC` field  with the calculate next address(if instuction was JALP the calculated address is stored in the return stack) and finally next time the instruction is fetched we check if an entry in the predictor queue exisist for the current fetched instruction, if it exists then insted of updating the pc value to `pc+4` we simply change it to `next_PC` from the predictor queue.
+
+----
 ## Notes
 
 - All Arrays/Queues mentioned in this design document are custom data structures that support dynamic resizing when needed.
