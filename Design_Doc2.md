@@ -173,3 +173,9 @@
 ### Instruction Flushing
 
 **Description**: If necessary, instructions are flushed from the pipeline due to mispredictions or hazards. The reorder buffer (ROB) removes instructions after the flush point, and the CPU resets relevant structures like the rename table, free list, and forwarded registers. The program counter is updated to the correct address, ensuring accurate simulation.
+
+---
+
+## Flow diagram of functions
+
+![flow diagram](./flow.png)
