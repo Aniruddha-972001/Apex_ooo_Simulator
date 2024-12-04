@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 typedef struct
 {
     int opcode; // Opcode of the instruction
