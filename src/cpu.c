@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <string.h>
 
 #include "macros.h"
 #include "cpu.h"
@@ -12,8 +13,25 @@ Cpu initialize_cpu(char *asm_file) {
     cpu.code = inst_list;
     cpu.pc = 4000;
     cpu.rt = initialize_rename_table();
+    
+    memset(&cpu.uprf_valid, 1, sizeof(int) * PHYS_REGS_COUNT);
 
     return cpu;
+}
+
+int get_urpf_value(Cpu cpu, int phy_reg, int *dest) {
+    if (phy_reg >= PHYS_REGS_COUNT) {
+        DBG("ERROR", "Tried to read value of P%d.", phy_reg);
+        return false;
+    }
+    
+    if (cpu.uprf_valid[phy_reg]) {
+        *dest = cpu.uprf[phy_reg];
+
+        return true;
+    }
+
+    return false;
 }
 
 // Convert pc from address space to index in instruction list
@@ -23,6 +41,9 @@ int pc_to_index(int pc) {
 
 // Fetch stage
 void fetch(Cpu *cpu) {
+    // Don't fetch if an instruction already exists in Fetch
+    if (cpu->fetch.has_inst) return;
+
     int index = pc_to_index(cpu->pc);
 
     if (index >= 0 && index < cpu->code.len) {
@@ -74,6 +95,16 @@ void decode_2(Cpu *cpu) {
 
 // Forwards data from each stage in the pipeline to the next stage
 void forward_data(Cpu *cpu) {
+    // Decode 2 -> Reservation Station
+    if (cpu->decode_2.has_inst) {
+        if (send_to_reservation_station((void *)cpu, cpu->decode_2.inst)) {
+            cpu->decode_2.has_inst = false;
+        } else {
+            // The reservation station was full, so we could not forward
+            // So we stall all previous stages
+            return;
+        }
+    }
  
     // Decode 1 -> Decode 2
     if (cpu->decode_1.has_inst) {
