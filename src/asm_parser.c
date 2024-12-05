@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "asm_parser.h"
+#include "instruction.h"
 
 typedef struct
 {
@@ -345,134 +345,134 @@ void read_i(Instruction *inst, InstructionToken *it)
 
 Instruction parse_instruction(InstructionToken *it)
 {
-    Instruction instruction = {-1, -1, -1, -1, -1};
+    Instruction instruction = {-1, -1, -1, -1, -1, -1};
     if (strcmp(it->op, "ADD") == 0)
     {
-        instruction.op = OPCODE_ADD;
+        instruction.op = OP_ADD;
         read_dss(&instruction, it);
     }
     else if (strcmp(it->op, "SUB") == 0)
     {
-        instruction.op = OPCODE_SUB;
+        instruction.op = OP_SUB;
         read_dss(&instruction, it);
     }
     else if (strcmp(it->op, "MUL") == 0)
     {
-        instruction.op = OPCODE_MUL;
+        instruction.op = OP_MUL;
         read_dss(&instruction, it);
     }
     else if (strcmp(it->op, "DIV") == 0)
     {
-        instruction.op = OPCODE_DIV;
+        instruction.op = OP_DIV;
         read_dss(&instruction, it);
     }
     else if (strcmp(it->op, "AND") == 0)
     {
-        instruction.op = OPCODE_AND;
+        instruction.op = OP_AND;
         read_dss(&instruction, it);
     }
     else if (strcmp(it->op, "OR") == 0)
     {
-        instruction.op = OPCODE_OR;
+        instruction.op = OP_OR;
         read_dss(&instruction, it);
     }
     else if (strcmp(it->op, "XOR") == 0)
     {
-        instruction.op = OPCODE_XOR;
+        instruction.op = OP_XOR;
         read_dss(&instruction, it);
     }
     else if (strcmp(it->op, "MOVC") == 0)
     {
-        instruction.op = OPCODE_MOVC;
+        instruction.op = OP_MOVC;
         read_di(&instruction, it);
     }
     else if (strcmp(it->op, "LOAD") == 0)
     {
-        instruction.op = OPCODE_LOAD;
+        instruction.op = OP_LOAD;
         read_dsi(&instruction, it);
     }
     else if (strcmp(it->op, "STORE") == 0)
     {
-        instruction.op = OPCODE_STORE;
+        instruction.op = OP_STORE;
         read_ssi(&instruction, it);
     }
     else if (strcmp(it->op, "BZ") == 0)
     {
-        instruction.op = OPCODE_BZ;
+        instruction.op = OP_BZ;
         read_i(&instruction, it);
     }
     else if (strcmp(it->op, "BNZ") == 0)
     {
-        instruction.op = OPCODE_BNZ;
+        instruction.op = OP_BNZ;
         read_i(&instruction, it);
     }
     else if (strcmp(it->op, "HALT") == 0)
     {
-        instruction.op = OPCODE_HALT;
+        instruction.op = OP_HALT;
     }
     else if (strcmp(it->op, "ADDL") == 0)
     {
-        instruction.op = OPCODE_ADDL;
+        instruction.op = OP_ADDL;
         read_dsi(&instruction, it);
     }
     else if (strcmp(it->op, "SUBL") == 0)
     {
-        instruction.op = OPCODE_SUBL;
+        instruction.op = OP_SUBL;
         read_dsi(&instruction, it);
     }
     else if (strcmp(it->op, "LDR") == 0)
     {
-        instruction.op = OPCODE_LDR;
+        instruction.op = OP_LDR;
         read_dss(&instruction, it);
     }
     else if (strcmp(it->op, "STR") == 0)
     {
-        instruction.op = OPCODE_STR;
+        instruction.op = OP_STR;
         read_sss(&instruction, it);
     }
     else if (strcmp(it->op, "CMP") == 0)
     {
-        instruction.op = OPCODE_CMP;
+        instruction.op = OP_CMP;
         read_ss(&instruction, it);
     }
     else if (strcmp(it->op, "CML") == 0)
     {
-        instruction.op = OPCODE_CML;
+        instruction.op = OP_CML;
         read_si(&instruction, it);
     }
     else if (strcmp(it->op, "BP") == 0)
     {
-        instruction.op = OPCODE_BP;
+        instruction.op = OP_BP;
         read_i(&instruction, it);
     }
     else if (strcmp(it->op, "BN") == 0)
     {
-        instruction.op = OPCODE_BN;
+        instruction.op = OP_BN;
         read_i(&instruction, it);
     }
     else if (strcmp(it->op, "BNP") == 0)
     {
-        instruction.op = OPCODE_BNP;
+        instruction.op = OP_BNP;
         read_i(&instruction, it);
     }
     else if (strcmp(it->op, "JUMP") == 0)
     {
-        instruction.op = OPCODE_JUMP;
+        instruction.op = OP_JUMP;
         read_si(&instruction, it);
     }
     else if (strcmp(it->op, "JALP") == 0)
     {
-        instruction.op = OPCODE_JALP;
+        instruction.op = OP_JALP;
         read_di(&instruction, it);
     }
     else if (strcmp(it->op, "RET") == 0)
     {
-        instruction.op = OPCODE_RET;
+        instruction.op = OP_RET;
         read_s(&instruction, it);
     }
     else if (strcmp(it->op, "NOP") == 0)
     {
-        instruction.op = OPCODE_NOP;
+        instruction.op = OP_NOP;
     }
     else
     {
@@ -695,16 +695,16 @@ InstructionList parse(char *file_name)
         printf("Failed to read from file.\n");
         exit(1);
     }
+
     InstructionTokenList code = parse_assembly(src);
     InstructionList list = new_inst_list();
 
     for (size_t i = 0; i < code.len; i++)
     {
-        // print_instruction_token(code.data[i]);
         Instruction inst = parse_instruction(&code.data[i]);
-        print_instruction(inst);
         add_instruction(&list, inst);
     }
+
     // TODO: Free InstructionTokenList
     free(src);
     return list;
