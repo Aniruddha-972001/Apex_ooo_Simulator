@@ -19,6 +19,10 @@ int main(int argc, char **argv) {
     DBG("INFO", "Instructions parsed: %d", cpu.code.len);
 
     simulate_cycle(&cpu);
+    simulate_cycle(&cpu);
+    simulate_cycle(&cpu);
+    simulate_cycle(&cpu);
+    simulate_cycle(&cpu);
 
     return 0;
 }

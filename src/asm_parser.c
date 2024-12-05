@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "instruction.h"
+#include "cpu_settings.h"
 
 typedef struct
 {
@@ -39,7 +40,7 @@ void read_di(Instruction *inst, InstructionToken *it)
     reg = it->regs[0];
     if (reg[0] == 'R')
     {
-        inst->rd = atoi(reg + 1) - 1;
+        inst->rd = atoi(reg + 1);
     }
     else
     {
@@ -71,7 +72,7 @@ void read_si(Instruction *inst, InstructionToken *it)
     reg = it->regs[0];
     if (reg[0] == 'R')
     {
-        inst->rs1 = atoi(reg + 1) - 1;
+        inst->rs1 = atoi(reg + 1);
     }
     else
     {
@@ -103,7 +104,7 @@ void read_dsi(Instruction *inst, InstructionToken *it)
     reg = it->regs[0];
     if (reg[0] == 'R')
     {
-        inst->rd = atoi(reg + 1) - 1;
+        inst->rd = atoi(reg + 1);
     }
     else
     {
@@ -114,7 +115,7 @@ void read_dsi(Instruction *inst, InstructionToken *it)
     reg = it->regs[1];
     if (reg[0] == 'R')
     {
-        inst->rs1 = atoi(reg + 1) - 1;
+        inst->rs1 = atoi(reg + 1);
     }
     else
     {
@@ -147,7 +148,7 @@ void read_dss(Instruction *inst, InstructionToken *it)
     reg = it->regs[0];
     if (reg[0] == 'R')
     {
-        inst->rd = atoi(reg + 1) - 1;
+        inst->rd = atoi(reg + 1);
     }
     else
     {
@@ -158,7 +159,7 @@ void read_dss(Instruction *inst, InstructionToken *it)
     reg = it->regs[1];
     if (reg[0] == 'R')
     {
-        inst->rs1 = atoi(reg + 1) - 1;
+        inst->rs1 = atoi(reg + 1);
     }
     else
     {
@@ -169,7 +170,7 @@ void read_dss(Instruction *inst, InstructionToken *it)
     reg = it->regs[2];
     if (reg[0] == 'R')
     {
-        inst->rs2 = atoi(reg + 1) - 1;
+        inst->rs2 = atoi(reg + 1);
     }
     else
     {
@@ -191,7 +192,7 @@ void read_sss(Instruction *inst, InstructionToken *it)
     reg = it->regs[0];
     if (reg[0] == 'R')
     {
-        inst->rs1 = atoi(reg + 1) - 1;
+        inst->rs1 = atoi(reg + 1);
     }
     else
     {
@@ -202,7 +203,7 @@ void read_sss(Instruction *inst, InstructionToken *it)
     reg = it->regs[1];
     if (reg[0] == 'R')
     {
-        inst->rs2 = atoi(reg + 1) - 1;
+        inst->rs2 = atoi(reg + 1);
     }
     else
     {
@@ -213,7 +214,7 @@ void read_sss(Instruction *inst, InstructionToken *it)
     reg = it->regs[2];
     if (reg[0] == 'R')
     {
-        inst->rs3 = atoi(reg + 1) - 1;
+        inst->rs3 = atoi(reg + 1);
     }
     else
     {
@@ -235,7 +236,7 @@ void read_ssi(Instruction *inst, InstructionToken *it)
     reg = it->regs[0];
     if (reg[0] == 'R')
     {
-        inst->rd = atoi(reg + 1) - 1;
+        inst->rd = atoi(reg + 1);
     }
     else
     {
@@ -246,7 +247,7 @@ void read_ssi(Instruction *inst, InstructionToken *it)
     reg = it->regs[1];
     if (reg[0] == 'R')
     {
-        inst->rs1 = atoi(reg + 1) - 1;
+        inst->rs1 = atoi(reg + 1);
     }
     else
     {
@@ -279,7 +280,7 @@ void read_ss(Instruction *inst, InstructionToken *it)
     reg = it->regs[0];
     if (reg[0] == 'R')
     {
-        inst->rd = atoi(reg + 1) - 1;
+        inst->rd = atoi(reg + 1);
     }
     else
     {
@@ -290,7 +291,7 @@ void read_ss(Instruction *inst, InstructionToken *it)
     reg = it->regs[1];
     if (reg[0] == 'R')
     {
-        inst->rs1 = atoi(reg + 1) - 1;
+        inst->rs1 = atoi(reg + 1);
     }
     else
     {
@@ -312,7 +313,7 @@ void read_s(Instruction *inst, InstructionToken *it)
     reg = it->regs[0];
     if (reg[0] == 'R')
     {
-        inst->rd = atoi(reg + 1) - 1;
+        inst->rd = atoi(reg + 1);
     }
     else
     {
@@ -477,6 +478,23 @@ Instruction parse_instruction(InstructionToken *it)
     else
     {
         fprintf(stderr, "ERROR: Line %lu: Unknown opcode `%s`\n", it->line, it->op);
+        exit(1);
+    }
+
+    if (instruction.rs1 >= ARCH_REGS_COUNT) {
+        fprintf(stderr, "ERROR: Line %lu: Invalid register R%d\n", it->line, instruction.rs1);
+        exit(1);
+    }
+    if (instruction.rs2 >= ARCH_REGS_COUNT) {
+        fprintf(stderr, "ERROR: Line %lu: Invalid register R%d\n", it->line, instruction.rs2);
+        exit(1);
+    }
+    if (instruction.rs3 >= ARCH_REGS_COUNT) {
+        fprintf(stderr, "ERROR: Line %lu: Invalid register R%d\n", it->line, instruction.rs3);
+        exit(1);
+    }
+    if (instruction.rd >= ARCH_REGS_COUNT) {
+        fprintf(stderr, "ERROR: Line %lu: Invalid register R%d\n", it->line, instruction.rd);
         exit(1);
     }
 

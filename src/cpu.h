@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "instruction.h"
+#include "rename.h"
 
 typedef struct {
     bool has_inst;
@@ -12,7 +13,9 @@ typedef struct {
 typedef struct {
     InstructionList code; // List of instructions
 
+    int cycles; // Cycles counter
     int pc; // Program counter
+    RenameTable rt; // RenameTable and FreeList
 
     CpuStage fetch;
     CpuStage decode_1;
