@@ -81,7 +81,8 @@
         - **Arguments**: CPU
         - **Return**: `void`
     
-    - **Int FU (Integer Functional Unit):** Retrieves an `IQE` from `IRS`. Executes integer instructions (e.g., ADD, SUB). If the instruction being processed is either a Branch, JALP, or RET instruction then it checks if a corresponding `PredictorEntry` exists in `struct Predictor`. If the entry exists, then it will update the predicted address in the `PredictorEntry`. For Branching or Jumping instructions (including RET), if there was a miss in the prediction, it causes the CPU to flush all new instructions and resets the state of the CPU to the saved state.
+    - **Int FU (Integer Functional Unit):** Retrieves an `IQE` from `IRS`. Executes integer instructions (e.g., ADD, SUB).If the instruction being processed is JALP we calculate the return address and push in into the `struct ReturnStack`.If the instruction being processed is either a Branch, or RET instruction then it checks if a corresponding `PredictorEntry` or `ReturnStackEntry` exists in `struct Predictor` or `struct ReturnStack`. If the entry exists, then it will update the predicted address in the `PredictorEntry`. If a `ReturnStackEntry` exists then we pop from the `ReturnStack` and update the control flow according the return address.For Branching or Jumping instructions (including RET), if there was a miss in the prediction, it causes the CPU to flush all new instructions and resets the state of the CPU to the saved state.
+  
         - **Arguments**: CPU
         - **Return**: `void`
         
@@ -97,7 +98,7 @@
         - **Arguments**: CPU
         - **Return**: `void`
         
-    - **Commit:** Updates the values of `struct UPRF` and `struct UCRF` of the CPU. If the current instruction was HALT, returns `true` or else returns `false`.
+    - **Commit:** Updates the values of `struct UPRF` and `struct UCRF` of the CPU. If the current instruction was HALT, returns `true` or else returns `false`.Frees up physical registers using Renamer-frees strategy.
         - **Arguments**: CPU
         - **Return**: Simulation status (`bool`)
 
@@ -193,7 +194,7 @@ This is a simple struct only responsible for storing the instructions in the pip
     - `queue` (IQE[8]): A list of instructions stored in the IRS
 
 - Associated Functions:
-    - **GetInstruction:** Checks for an instruction in the queue that has all values fulfilled by UPRF/UCRF or forwarded. Returns an instruction if it has all available values or else returns NULL.       
+    - **GetInstruction:** Checks for an instruction in the queue that has all values fulfilled by UPRF/UCRF or forwarded. Returns an instruction if it has all available values or else returns NULL.This function follows the requirement of issuing the earlier dispatchment of instructions.     
         - **Arguments:** `void`
         - **Returns:** IQE with all valid register values
 
@@ -205,7 +206,7 @@ This is a simple struct only responsible for storing the instructions in the pip
     - `queue` (IQE[6]): A list of instructions stored in the LSQ
 
 - Associated Functions:
-    - **GetInstruction:** Checks for an instruction in the queue that has all values fulfilled by UPRF/UCRF or forwarded. Returns an instruction if it has all available values or else returns NULL.       
+    - **GetInstruction:** Checks for an instruction in the queue that has all values fulfilled by UPRF/UCRF or forwarded. Returns an instruction if it has all available values or else returns NULL. This function follows the requirement of issuing the earlier dispatchment of instructions     
         - **Arguments:** `void`
         - **Returns:** IQE with all valid register values
 
@@ -217,7 +218,7 @@ This is a simple struct only responsible for storing the instructions in the pip
     - `queue` (IQE[2]): A list of instructions stored in the MRS
 
 - Associated Functions:
-    - **GetInstruction:** Checks for an instruction in the queue that has all values fulfilled by UPRF/UCRF or forwarded. Returns an instruction if it has all available values or else returns NULL.       
+    - **GetInstruction:** Checks for an instruction in the queue that has all values fulfilled by UPRF/UCRF or forwarded. Returns an instruction if it has all available values or else returns NULL.This function follows the requirement of issuing the earlier dispatchment of instructions       
         - **Arguments:** `void`
         - **Returns:** IQE with all valid register values
 
