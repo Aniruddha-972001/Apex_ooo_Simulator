@@ -6,21 +6,17 @@
 
 #include "instruction.h"
 #include "cpu.h"
+#include "macros.h"
 
 int main(int argc, char **argv) {
 
-    printf("Hello, Apex Out of Order.\n");
+    printf("Hello, Apex Out of Order.\n\n");
 
     assert(argc == 2 && "Usage: ./cpu <asm_file>");
 
-    InstructionList inst_list = parse(argv[1]);
+    Cpu cpu = initialize_cpu(argv[1]);
 
-    for (int i = 0; i < inst_list.len; i++) {
-        print_instruction(inst_list.data[i]);
-    }
-
-    // TODO: Simulate one cycle of the CPU
-    Cpu cpu = {0};
+    DBG("INFO", "Instructions parsed: %d", cpu.code.len);
 
     simulate_cycle(&cpu);
 

@@ -19,6 +19,8 @@ typedef struct {
     CpuStage decode_2;
 } Cpu;
 
+Cpu initialize_cpu(char *asm_file);
+
 // Simulates one cycle of the cpu
 //
 // Returns `true` if HALT instruction was completed

@@ -4,6 +4,16 @@
 #include "cpu.h"
 #include "instruction.h"
 
+Cpu initialize_cpu(char *asm_file) {
+    InstructionList inst_list = parse(asm_file);
+
+    Cpu cpu = {0};
+    cpu.code = inst_list;
+    cpu.pc = 4000;
+
+    return cpu;
+}
+
 // Convert pc from address space to index in instruction list
 int pc_to_index(int pc) {
     return (pc - 4000) / 4;
@@ -13,7 +23,7 @@ int pc_to_index(int pc) {
 void fetch(Cpu *cpu) {
     int index = pc_to_index(cpu->pc);
 
-    if (index > 0 && index < cpu->code.len) {
+    if (index >= 0 && index < cpu->code.len) {
         Instruction inst = cpu->code.data[index];
 
         cpu->fetch.has_inst = true;
@@ -21,7 +31,7 @@ void fetch(Cpu *cpu) {
     } else {
         cpu->fetch.has_inst = false;
 
-        DBG("Warn", "Invalid program counter: %d", cpu->pc);
+        DBG("WARN", "Invalid program counter: %d (index = %d)", cpu->pc, index);
     }
 }
 
