@@ -203,6 +203,9 @@ bool irs_get_first_ready_iqe(void *cpu, IQE **dest) {
 
     for (int i = 0; i < _cpu->irs.len; i++) {
         IQE *iqe = _cpu->irs.queue[i];
+
+        // TODO: Update source registers based on forwarded or uprf
+
         if (iqe_is_ready(*iqe)) {
             *dest = iqe;
 
