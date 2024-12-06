@@ -8,3 +8,7 @@
 #define IRS_CAPACITY 8
 #define MRS_CAPACITY 2
 #define LSQ_CAPACITY 6
+
+#define INT_FU_STAGES 1
+#define MUL_FU_STAGES 4
+#define MEM_FU_STAGES 3

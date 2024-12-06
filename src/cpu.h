@@ -14,6 +14,7 @@ typedef struct {
 typedef struct {
     bool has_inst;
     IQE  iqe;
+    int cycles;
 } CpuFU;
 
 typedef struct {

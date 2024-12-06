@@ -93,6 +93,54 @@ void decode_2(Cpu *cpu) {
     }
 }
 
+void int_fu(Cpu *cpu) {
+    if (!cpu->intFU.has_inst) return;
+
+    if (cpu->intFU.cycles > 0) {
+        cpu->intFU.cycles -= 1;
+    }
+
+    if (cpu->intFU.cycles == 0) {
+        // TODO: Perform function
+
+        // TODO: Forward data
+
+        cpu->intFU.has_inst = false;
+    }
+}
+
+void mul_fu(Cpu *cpu) {
+    if (!cpu->mulFU.has_inst) return;
+
+    if (cpu->mulFU.cycles > 0) {
+        cpu->mulFU.cycles -= 1;
+    }
+
+    if (cpu->mulFU.cycles == 0) {
+        // TODO: Perform function
+
+        // TODO: Forward data
+
+        cpu->mulFU.has_inst = false;
+    }
+}
+
+void mem_fu(Cpu *cpu) {
+    if (!cpu->memFU.has_inst) return;
+
+    if (cpu->memFU.cycles > 0) {
+        cpu->memFU.cycles -= 1;
+    }
+
+    if (cpu->memFU.cycles == 0) {
+        // TODO: Perform function
+
+        // TODO: Forward data
+
+        cpu->memFU.has_inst = false;
+    }
+}
+
 // Forwards data from each stage in the pipeline to the next stage
 void forward_pipeline(Cpu *cpu) {
     // IRS -> IntFU
@@ -102,6 +150,7 @@ void forward_pipeline(Cpu *cpu) {
         if (irs_get_first_ready_iqe((void *)cpu, &iqe)) {
             cpu->intFU.has_inst = true;
             cpu->intFU.iqe = iqe;
+            cpu->intFU.cycles = INT_FU_STAGES;
         }
     }
 
@@ -112,6 +161,7 @@ void forward_pipeline(Cpu *cpu) {
         if (mrs_get_first_ready_iqe((void *)cpu, &iqe)) {
             cpu->mulFU.has_inst = true;
             cpu->mulFU.iqe = iqe;
+            cpu->mulFU.cycles = MUL_FU_STAGES;
         }
     }
 
@@ -122,6 +172,7 @@ void forward_pipeline(Cpu *cpu) {
         if (lsq_get_first_ready_iqe((void *)cpu, &iqe)) {
             cpu->memFU.has_inst = true;
             cpu->memFU.iqe = iqe;
+            cpu->memFU.cycles = MEM_FU_STAGES;
         }
     }
 
@@ -165,6 +216,15 @@ bool simulate_cycle(Cpu *cpu) {
 
     // Decode 2
     decode_2(cpu);
+
+    // IntFU
+    int_fu(cpu);
+
+    // MulFU
+    mul_fu(cpu);
+
+    // MemFU
+    mem_fu(cpu);
 
     // Forward data to next stage
     forward_pipeline(cpu);
