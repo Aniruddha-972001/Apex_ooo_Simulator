@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 
     Cpu cpu = initialize_cpu(argv[1]);
 
-    DBG("INFO", "Instructions parsed: %d", cpu.code.len);
+    DBG("INFO", "Instructions parsed: %lu", cpu.code.len);
 
     simulate_cycle(&cpu);
     simulate_cycle(&cpu);

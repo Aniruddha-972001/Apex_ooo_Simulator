@@ -12,3 +12,5 @@
 #define INT_FU_STAGES 1
 #define MUL_FU_STAGES 4
 #define MEM_FU_STAGES 3
+
+#define ROB_CAPACITY 80

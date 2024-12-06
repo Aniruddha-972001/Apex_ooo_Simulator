@@ -4,11 +4,12 @@
 
 #include "instruction.h"
 #include "rename.h"
+#include "rob.h"
 #include "rs.h"
 
 typedef struct {
     bool has_inst;
-    Instruction inst; 
+    Instruction inst;
 } CpuStage;
 
 typedef struct {
@@ -41,6 +42,9 @@ typedef struct {
     CpuFU intFU;
     CpuFU mulFU;
     CpuFU memFU;
+
+    // Reorder Buffer
+    Rob rob;
 } Cpu;
 
 Cpu initialize_cpu(char *asm_file);

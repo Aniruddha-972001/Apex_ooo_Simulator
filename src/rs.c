@@ -109,18 +109,11 @@ bool send_to_reservation_station(void *cpu, Instruction inst)
     case OP_JUMP:
     case OP_JALP:
     case OP_RET:
-    {
-        DBG("INFO", "Sent instruction 0x%x to IRS", iqe.op);
-        return send_to_irs(_cpu, iqe);
-    }
-
     case OP_HALT:
     case OP_NOP:
     {
-        // TODO: Where do these go?
-        DBG("WARN", "Where to send `HALT` and `NOP` in `send_to_reservation_station`", iqe.op);
-
-        break;
+        DBG("INFO", "Sent instruction 0x%x to IRS", iqe.op);
+        return send_to_irs(_cpu, iqe);
     }
 
     case OP_LOAD:
