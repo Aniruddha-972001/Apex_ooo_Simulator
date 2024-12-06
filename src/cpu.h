@@ -12,7 +12,12 @@ typedef struct {
 } CpuStage;
 
 typedef struct {
-    InstructionList code; // List of instructions
+    bool has_inst;
+    IQE  iqe;
+} CpuFU;
+
+typedef struct {
+    InstructionList code;               // List of instructions
 
     int cycles;                         // Cycles counter
     int pc;                             // Program counter
@@ -21,13 +26,20 @@ typedef struct {
     int uprf[PHYS_REGS_COUNT];          // UPRF
     RenameTable rt;                     // RenameTable and FreeList
 
+    // Reservation Stations
     IRS irs;
     LSQ lsq;
     MRS mrs;
 
+    // Stages
     CpuStage fetch;
     CpuStage decode_1;
     CpuStage decode_2;
+
+    // Functional Units
+    CpuFU intFU;
+    CpuFU mulFU;
+    CpuFU memFU;
 } Cpu;
 
 Cpu initialize_cpu(char *asm_file);

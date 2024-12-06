@@ -25,6 +25,8 @@ typedef struct {
     bool rs3_valid;     
 
     size_t timestamp;   // Cycle number
+
+    bool completed;     // Execution completed
 } IQE;
 
 // Integer Reservation Station
@@ -51,6 +53,9 @@ bool send_to_reservation_station(void *cpu, Instruction inst);
 // Function to create an IQE from an Instruction
 IQE make_iqe(void *cpu, Instruction inst);
 
-// TODO: Functions to retrieve first ready instruction
+// Functions to retrieve first ready instruction
+bool irs_get_first_ready_iqe(void *cpu, IQE *dest);
+bool mrs_get_first_ready_iqe(void *cpu, IQE *dest);
+bool lsq_get_first_ready_iqe(void *cpu, IQE *dest);
 
 // TODO: Functions to send forwarded data to each RS

@@ -94,7 +94,37 @@ void decode_2(Cpu *cpu) {
 }
 
 // Forwards data from each stage in the pipeline to the next stage
-void forward_data(Cpu *cpu) {
+void forward_pipeline(Cpu *cpu) {
+    // IRS -> IntFU
+    if (!cpu->intFU.has_inst) {
+        IQE iqe = {0};
+
+        if (irs_get_first_ready_iqe((void *)cpu, &iqe)) {
+            cpu->intFU.has_inst = true;
+            cpu->intFU.iqe = iqe;
+        }
+    }
+
+    // MRS -> MulFU
+    if (!cpu->mulFU.has_inst) {
+        IQE iqe = {0};
+
+        if (mrs_get_first_ready_iqe((void *)cpu, &iqe)) {
+            cpu->mulFU.has_inst = true;
+            cpu->mulFU.iqe = iqe;
+        }
+    }
+
+    // LSQ -> MemFU
+    if (!cpu->memFU.has_inst) {
+        IQE iqe = {0};
+
+        if (lsq_get_first_ready_iqe((void *)cpu, &iqe)) {
+            cpu->memFU.has_inst = true;
+            cpu->memFU.iqe = iqe;
+        }
+    }
+
     // Decode 2 -> Reservation Station
     if (cpu->decode_2.has_inst) {
         if (send_to_reservation_station((void *)cpu, cpu->decode_2.inst)) {
@@ -137,7 +167,7 @@ bool simulate_cycle(Cpu *cpu) {
     decode_2(cpu);
 
     // Forward data to next stage
-    forward_data(cpu);
+    forward_pipeline(cpu);
 
     return false;
 }
