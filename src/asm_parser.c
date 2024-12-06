@@ -501,9 +501,41 @@ Instruction parse_instruction(InstructionToken *it)
     return instruction;
 }
 
+char *get_op_name(int opcode) {
+	switch (opcode) {
+		case OP_ADD: return "ADD";
+		case OP_SUB: return "SUB";
+		case OP_MUL: return "MUL";
+		case OP_DIV: return "DIV";
+		case OP_AND: return "AND";
+		case OP_OR: return "OR";
+		case OP_XOR: return "XOR";
+		case OP_MOVC: return "MOVC";
+		case OP_LOAD: return "LOAD";
+		case OP_STORE: return "STORE";
+		case OP_BZ: return "BZ";
+		case OP_BNZ: return "BNZ";
+		case OP_HALT: return "HALT";
+		case OP_ADDL: return "ADDL";
+		case OP_SUBL: return "SUBL";
+		case OP_LDR: return "LDR";
+		case OP_STR: return "STR";
+		case OP_CMP: return "CMP";
+		case OP_CML: return "CML";
+		case OP_BP: return "BP";
+		case OP_BN: return "BN";
+		case OP_BNP: return "BNP";
+		case OP_JUMP: return "JUMP";
+		case OP_JALP: return "JALP";
+		case OP_RET: return "RET";
+		case OP_NOP: return "NOP";
+		default: return "ERR";
+	}
+}
+
 void print_instruction(Instruction i)
 {
-    printf("Instruction { OP:%d D:%d S1:%d S2:%d S3:%d I:%d }\n", i.op, i.rd, i.rs1, i.rs2, i.rs3, i.imm);
+    printf("Instruction { %s RD: %d RS1: %d RS2: %d RS3: %d IMM: %d }\n", get_op_name(i.op), i.rd, i.rs1, i.rs2, i.rs3, i.imm);
 }
 
 void print_token(Token t)

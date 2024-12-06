@@ -23,6 +23,11 @@ int main(int argc, char **argv) {
     simulate_cycle(&cpu);
     simulate_cycle(&cpu);
     simulate_cycle(&cpu);
+    simulate_cycle(&cpu);
+    simulate_cycle(&cpu);
+    simulate_cycle(&cpu);
+    simulate_cycle(&cpu);
+    simulate_cycle(&cpu);
 
     return 0;
 }

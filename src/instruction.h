@@ -19,6 +19,7 @@ typedef struct
 } InstructionList;
 
 InstructionList parse(char *file_name);
+char *get_op_name(int opcode);
 void print_instruction(Instruction i);
 
 /* Numeric OPCODE identifiers for instructions */

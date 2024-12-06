@@ -47,6 +47,9 @@ typedef struct {
     int len;
 } LSQ;
 
+// Print IQE
+void print_iqe(IQE *iqe);
+
 // Function to tell which RS an instruction should go into
 bool send_to_reservation_station(void *cpu, IQE *iqe);
 
@@ -59,3 +62,6 @@ bool mrs_get_first_ready_iqe(void *cpu, IQE **dest);
 bool lsq_get_first_ready_iqe(void *cpu, IQE **dest);
 
 // TODO: Functions to send forwarded data to each RS
+void irs_send_forwarded_register(IRS *irs, int phy_reg, int reg_value);
+void mrs_send_forwarded_register(MRS *mrs, int phy_reg, int reg_value);
+void lsq_send_forwarded_register(LSQ *lsq, int phy_reg, int reg_value);

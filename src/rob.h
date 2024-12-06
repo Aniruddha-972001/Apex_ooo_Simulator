@@ -3,8 +3,13 @@
 #include "cpu_settings.h"
 #include "rs.h"
 
+typedef struct RobNodeStruct {
+	IQE iqe;
+	struct RobNodeStruct *next;
+} RobNode;
+
 typedef struct {
-	IQE queue[ROB_CAPACITY];
+	RobNode *head;
 	int len;
 } Rob;
 

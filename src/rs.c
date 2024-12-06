@@ -45,8 +45,52 @@ IQE make_iqe(void *cpu, Instruction inst)
     return iqe;
 }
 
+void print_iqe(IQE *iqe) {
+	printf("IQE { %s RD: P%d ", get_op_name(iqe->op), iqe->rd);
+
+	if (iqe->rs1 != -1) {
+		if (iqe->rs1_valid) {
+			printf("RS1: %d ", iqe->rs1_value);
+		} else {
+			printf("RS1: P%d ", iqe->rs1);
+		}
+	}
+
+	if (iqe->rs2 != -1) {
+		if (iqe->rs2_valid) {
+			printf("RS2: %d ", iqe->rs2_value);
+		} else {
+			printf("RS2: P%d ", iqe->rs2);
+		}
+	}
+
+	if (iqe->rs3 != -1) {
+		if (iqe->rs3_valid) {
+			printf("RS3: %d ", iqe->rs3_value);
+		} else {
+			printf("RS3: P%d ", iqe->rs3);
+		}
+	}
+
+	printf("IMM: %d }\n", iqe->imm);
+}
+
 bool iqe_is_ready(IQE iqe) {
-    return (iqe.rs1 != -1 && iqe.rs1_valid) && (iqe.rs2 != -1 && iqe.rs2_valid) && (iqe.rs3 != -1 && iqe.rs3_valid);
+	bool result = true;
+
+	if (iqe.rs1 != -1) {
+		result &= iqe.rs1_valid;
+	}
+
+	if (iqe.rs2 != -1) {
+		result &= iqe.rs2_valid;
+	}
+
+	if (iqe.rs3 != -1) {
+		result &= iqe.rs3_valid;
+	}
+
+	return result;
 }
 
 bool send_to_irs(Cpu *cpu, IQE *iqe)
@@ -207,4 +251,43 @@ bool lsq_get_first_ready_iqe(void *cpu, IQE **dest) {
     }
 
     return false;
+}
+
+void update_iqe_with_forwarded(IQE *iqe, int phy_reg, int reg_value) {
+	if (iqe->rs1 == phy_reg) {
+		iqe->rs1_value = reg_value;
+		iqe->rs1_valid = true;
+	}
+	if (iqe->rs2 == phy_reg) {
+		iqe->rs2_value = reg_value;
+		iqe->rs2_valid = true;
+	}
+	if (iqe->rs3 == phy_reg) {
+		iqe->rs3_value = reg_value;
+		iqe->rs3_valid = true;
+	}
+}
+
+void irs_send_forwarded_register(IRS *irs, int phy_reg, int reg_value) {
+	for (int i = 0; i < irs->len; i++) {
+		IQE *iqe = irs->queue[i];
+
+		update_iqe_with_forwarded(iqe, phy_reg, reg_value);
+	}
+}
+
+void mrs_send_forwarded_register(MRS *mrs, int phy_reg, int reg_value) {
+	for (int i = 0; i < mrs->len; i++) {
+		IQE *iqe = mrs->queue[i];
+
+		update_iqe_with_forwarded(iqe, phy_reg, reg_value);
+	}
+}
+
+void lsq_send_forwarded_register(LSQ *lsq, int phy_reg, int reg_value) {
+	for (int i = 0; i < lsq->len; i++) {
+		IQE *iqe = lsq->queue[i];
+
+		update_iqe_with_forwarded(iqe, phy_reg, reg_value);
+	}
 }
