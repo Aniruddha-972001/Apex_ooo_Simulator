@@ -147,7 +147,7 @@ bool send_to_reservation_station(void *cpu, Instruction inst)
 }
 
 void queue_remove_entry(IQE *queue, int *len, int index) {
-    if (index >= len) {
+    if (index >= *len) {
         DBG("WARN", "`queue_remove_entry` : Trying to remove item beyond queue length. Len: %d, Index: %d", *len, index);
         return;
     }
