@@ -49,7 +49,7 @@ bool iqe_is_ready(IQE iqe) {
     return (iqe.rs1 != -1 && iqe.rs1_valid) && (iqe.rs2 != -1 && iqe.rs2_valid) && (iqe.rs3 != -1 && iqe.rs3_valid);
 }
 
-bool send_to_irs(Cpu *cpu, IQE iqe)
+bool send_to_irs(Cpu *cpu, IQE *iqe)
 {
     if (cpu->irs.len >= IRS_CAPACITY)
         return false;
@@ -60,7 +60,7 @@ bool send_to_irs(Cpu *cpu, IQE iqe)
     return true;
 }
 
-bool send_to_mrs(Cpu *cpu, IQE iqe)
+bool send_to_mrs(Cpu *cpu, IQE *iqe)
 {
     if (cpu->mrs.len >= MRS_CAPACITY)
         return false;
@@ -71,7 +71,7 @@ bool send_to_mrs(Cpu *cpu, IQE iqe)
     return true;
 }
 
-bool send_to_lsq(Cpu *cpu, IQE iqe)
+bool send_to_lsq(Cpu *cpu, IQE *iqe)
 {
     if (cpu->lsq.len >= LSQ_CAPACITY)
         return false;
@@ -82,13 +82,13 @@ bool send_to_lsq(Cpu *cpu, IQE iqe)
     return true;
 }
 
-bool send_to_reservation_station(void *cpu, Instruction inst)
+bool send_to_reservation_station(void *cpu, IQE *iqe)
 {
     Cpu *_cpu = (Cpu *)cpu;
 
-    IQE iqe = make_iqe(_cpu, inst);
+    // IQE iqe = make_iqe(_cpu, inst);
 
-    switch (iqe.op)
+    switch (iqe->op)
     {
 
     case OP_ADD:
@@ -112,7 +112,7 @@ bool send_to_reservation_station(void *cpu, Instruction inst)
     case OP_HALT:
     case OP_NOP:
     {
-        DBG("INFO", "Sent instruction 0x%x to IRS", iqe.op);
+        DBG("INFO", "Sent instruction 0x%x to IRS", iqe->op);
         return send_to_irs(_cpu, iqe);
     }
 
@@ -121,25 +121,25 @@ bool send_to_reservation_station(void *cpu, Instruction inst)
     case OP_LDR:
     case OP_STR:
     {
-        DBG("INFO", "Sent instruction 0x%x to LSQ", iqe.op);
+        DBG("INFO", "Sent instruction 0x%x to LSQ", iqe->op);
         return send_to_lsq(_cpu, iqe);
     }
 
     case OP_DIV:
     case OP_MUL:
     {
-        DBG("INFO", "Sent instruction 0x%x to MRS", iqe.op);
+        DBG("INFO", "Sent instruction 0x%x to MRS", iqe->op);
         return send_to_mrs(_cpu, iqe);
     }
 
     default:
-        DBG("ERROR", "Unknown Opcode `0x%x` encountered in `send_to_reservation_station`", iqe.op);
+        DBG("ERROR", "Unknown Opcode `0x%x` encountered in `send_to_reservation_station`", iqe->op);
     }
 
     return false;
 }
 
-void queue_remove_entry(IQE *queue, int *len, int index) {
+void queue_remove_entry(IQE **queue, int *len, int index) {
     if (index >= *len) {
         DBG("WARN", "`queue_remove_entry` : Trying to remove item beyond queue length. Len: %d, Index: %d", *len, index);
         return;
@@ -152,14 +152,14 @@ void queue_remove_entry(IQE *queue, int *len, int index) {
     *len -= 1;
 }
 
-bool irs_get_first_ready_iqe(void *cpu, IQE *dest) {
+bool irs_get_first_ready_iqe(void *cpu, IQE **dest) {
     Cpu *_cpu = (Cpu *)cpu;
 
     if (_cpu->irs.len == 0) return false;
 
     for (int i = 0; i < _cpu->irs.len; i++) {
-        IQE iqe = _cpu->irs.queue[i];
-        if (iqe_is_ready(iqe)) {
+        IQE *iqe = _cpu->irs.queue[i];
+        if (iqe_is_ready(*iqe)) {
             *dest = iqe;
 
             queue_remove_entry(_cpu->irs.queue, &_cpu->irs.len, i);
@@ -171,14 +171,14 @@ bool irs_get_first_ready_iqe(void *cpu, IQE *dest) {
     return false;
 }
 
-bool mrs_get_first_ready_iqe(void *cpu, IQE *dest) {
+bool mrs_get_first_ready_iqe(void *cpu, IQE **dest) {
     Cpu *_cpu = (Cpu *)cpu;
 
     if (_cpu->mrs.len == 0) return false;
 
     for (int i = 0; i < _cpu->mrs.len; i++) {
-        IQE iqe = _cpu->mrs.queue[i];
-        if (iqe_is_ready(iqe)) {
+        IQE *iqe = _cpu->mrs.queue[i];
+        if (iqe_is_ready(*iqe)) {
             *dest = iqe;
 
             queue_remove_entry(_cpu->mrs.queue, &_cpu->mrs.len, i);
@@ -190,14 +190,14 @@ bool mrs_get_first_ready_iqe(void *cpu, IQE *dest) {
     return false;
 }
 
-bool lsq_get_first_ready_iqe(void *cpu, IQE *dest) {
+bool lsq_get_first_ready_iqe(void *cpu, IQE **dest) {
     Cpu *_cpu = (Cpu *)cpu;
 
     if (_cpu->lsq.len == 0) return false;
 
     for (int i = 0; i < _cpu->lsq.len; i++) {
-        IQE iqe = _cpu->lsq.queue[i];
-        if (iqe_is_ready(iqe)) {
+        IQE *iqe = _cpu->lsq.queue[i];
+        if (iqe_is_ready(*iqe)) {
             *dest = iqe;
 
             queue_remove_entry(_cpu->lsq.queue, &_cpu->lsq.len, i);

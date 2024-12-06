@@ -1,10 +1,13 @@
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "macros.h"
 #include "cpu.h"
 #include "instruction.h"
 #include "rename.h"
+#include "rob.h"
+#include "rs.h"
 
 Cpu initialize_cpu(char *asm_file) {
     InstructionList inst_list = parse(asm_file); // We will need to free this later
@@ -13,7 +16,7 @@ Cpu initialize_cpu(char *asm_file) {
     cpu.code = inst_list;
     cpu.pc = 4000;
     cpu.rt = initialize_rename_table();
-    
+
     memset(&cpu.uprf_valid, 1, sizeof(int) * PHYS_REGS_COUNT);
 
     return cpu;
@@ -24,7 +27,7 @@ int get_urpf_value(Cpu cpu, int phy_reg, int *dest) {
         DBG("ERROR", "Tried to read value of P%d.", phy_reg);
         return false;
     }
-    
+
     if (cpu.uprf_valid[phy_reg]) {
         *dest = cpu.uprf[phy_reg];
 
@@ -141,11 +144,25 @@ void mem_fu(Cpu *cpu) {
     }
 }
 
+bool commit(Cpu *cpu) {
+	IQE iqe = {0};
+	bool halt = false;
+
+	if (rob_get_completed(&cpu->rob, &iqe)) {
+		if (iqe.op == OP_HALT) {
+			halt = true;
+		}
+		// TODO: Do something with this IQE
+	}
+
+	return halt;
+}
+
 // Forwards data from each stage in the pipeline to the next stage
 void forward_pipeline(Cpu *cpu) {
     // IRS -> IntFU
     if (!cpu->intFU.has_inst) {
-        IQE iqe = {0};
+        IQE *iqe = {0};
 
         if (irs_get_first_ready_iqe((void *)cpu, &iqe)) {
             cpu->intFU.has_inst = true;
@@ -156,7 +173,7 @@ void forward_pipeline(Cpu *cpu) {
 
     // MRS -> MulFU
     if (!cpu->mulFU.has_inst) {
-        IQE iqe = {0};
+        IQE *iqe = {0};
 
         if (mrs_get_first_ready_iqe((void *)cpu, &iqe)) {
             cpu->mulFU.has_inst = true;
@@ -167,7 +184,7 @@ void forward_pipeline(Cpu *cpu) {
 
     // LSQ -> MemFU
     if (!cpu->memFU.has_inst) {
-        IQE iqe = {0};
+        IQE *iqe = {0};
 
         if (lsq_get_first_ready_iqe((void *)cpu, &iqe)) {
             cpu->memFU.has_inst = true;
@@ -176,9 +193,18 @@ void forward_pipeline(Cpu *cpu) {
         }
     }
 
-    // Decode 2 -> Reservation Station
+    // Decode 2 -> Reservation Station & ROB
     if (cpu->decode_2.has_inst) {
-        if (send_to_reservation_station((void *)cpu, cpu->decode_2.inst)) {
+    	IQE iqe = make_iqe((void *)cpu, cpu->decode_2.inst);
+        IQE *rob_loc = rob_push_iqe(&cpu->rob, iqe);
+
+        if (rob_loc == 0) {
+        	DBG("ERROR", "ROB was full. %c", ' ');
+         	exit(1);
+        }
+        DBG("INFO", "ROB len: %d", cpu->rob.len);
+
+        if (send_to_reservation_station((void *)cpu, rob_loc)) {
             cpu->decode_2.has_inst = false;
         } else {
             // The reservation station was full, so we could not forward
@@ -186,7 +212,7 @@ void forward_pipeline(Cpu *cpu) {
             return;
         }
     }
- 
+
     // Decode 1 -> Decode 2
     if (cpu->decode_1.has_inst) {
         cpu->decode_1.has_inst = false;
@@ -226,8 +252,11 @@ bool simulate_cycle(Cpu *cpu) {
     // MemFU
     mem_fu(cpu);
 
+    // Commit
+    bool sim_completed = commit(cpu);
+
     // Forward data to next stage
     forward_pipeline(cpu);
 
-    return false;
+    return sim_completed;
 }
