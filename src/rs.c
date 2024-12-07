@@ -46,7 +46,11 @@ IQE make_iqe(void *cpu, Instruction inst)
 }
 
 void print_iqe(IQE *iqe) {
-	printf("IQE { %s RD: P%d ", get_op_name(iqe->op), iqe->rd);
+	printf("IQE { %s ", get_op_name(iqe->op));
+
+    if (iqe->rd != -1) {
+        printf("RD: P%d ", iqe->rd);
+    }
 
 	if (iqe->rs1 != -1) {
 		if (iqe->rs1_valid) {
@@ -72,7 +76,9 @@ void print_iqe(IQE *iqe) {
 		}
 	}
 
-	printf("IMM: %d }\n", iqe->imm);
+    if (iqe->imm != -1) {
+        printf("IMM: %d }\n", iqe->imm);
+    }
 }
 
 bool iqe_is_ready(IQE iqe) {
