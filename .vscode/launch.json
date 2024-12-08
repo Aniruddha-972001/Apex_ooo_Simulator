@@ -1,0 +1,23 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C++ Launch (Windows)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "cwd": "${workspaceRoot}",
+            "program": "${workspaceRoot}/cpu.exe",
+            "args": ["${workspaceRoot}/input/test_2.asm"],
+            "symbolSearchPath": "C:\\Symbols;C:\\SymbolDir2",
+            "externalConsole": true,
+            "logging": {
+              "moduleLoad": false,
+              "trace": true
+            },
+            "visualizerFile": "${workspaceFolder}/my.natvis",
+          }
+    ]
+}

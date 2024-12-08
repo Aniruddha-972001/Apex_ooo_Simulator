@@ -18,8 +18,8 @@ int main(int argc, char **argv) {
 
     DBG("INFO", "Instructions parsed: %lu", cpu.code.len);
 
-    // while (!simulate_cycle(&cpu));
-    for (int i = 0; i < 20; i++) simulate_cycle(&cpu);
+    while (!simulate_cycle(&cpu));
+    // for (int i = 0; i < 10; i++) simulate_cycle(&cpu);
 
     return 0;
 }

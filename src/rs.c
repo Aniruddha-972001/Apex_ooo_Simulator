@@ -14,6 +14,7 @@ IQE make_iqe(void *cpu, Instruction inst)
         .rs2 = inst.rs2,
         .rs3 = inst.rs3,
         .imm = inst.imm,
+        .cc = inst.cc,
 
         .result_buffer = 0,
         .rs1_value = 0,
@@ -41,6 +42,8 @@ IQE make_iqe(void *cpu, Instruction inst)
     {
         iqe.rs3_valid = get_urpf_value(*_cpu, iqe.rs3, &iqe.rs3_value);
     }
+
+    iqe.cc_valid = get_ucrf_value(*_cpu, iqe.cc, &iqe.cc_value);
 
     return iqe;
 }
@@ -76,6 +79,12 @@ void print_iqe(IQE *iqe) {
 		}
 	}
 
+    if (iqe->cc_valid) {
+        printf("CC: C%d (z=%d, n=%d, p=%d) ", iqe->cc, iqe->cc_value.z, iqe->cc_value.n, iqe->cc_value.p);
+    } else {
+        printf("CC: C%d ", iqe->cc);
+    }
+
     if (iqe->imm != -1) {
         printf("IMM: %d ", iqe->imm);
     }
@@ -97,6 +106,8 @@ bool iqe_is_ready(IQE iqe) {
 	if (iqe.rs3 != -1) {
 		result &= iqe.rs3_valid;
 	}
+
+    result &= iqe.cc_valid;
 
 	return result;
 }
@@ -235,6 +246,11 @@ bool irs_get_first_ready_iqe(void *cpu, IQE **dest) {
             }
         }
 
+        if (_cpu->fw_ucrf_valid[iqe->cc]) {
+            iqe->cc_valid = true;
+            iqe->cc_value = _cpu->fw_ucrf[iqe->cc];
+        }
+
         if (iqe_is_ready(*iqe)) {
             *dest = iqe;
 
@@ -277,6 +293,8 @@ bool mrs_get_first_ready_iqe(void *cpu, IQE **dest) {
                 iqe->rs3_valid = true;
             }
         }
+
+        iqe->cc_valid = true;
 
         // If IQE is ready move it out
         if (iqe_is_ready(*iqe)) {
@@ -321,6 +339,8 @@ bool lsq_get_first_ready_iqe(void *cpu, IQE **dest) {
                 iqe->rs3_valid = true;
             }
         }
+
+        iqe->cc_valid = true;
 
         if (iqe_is_ready(*iqe)) {
             *dest = iqe;

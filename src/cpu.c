@@ -21,6 +21,7 @@ Cpu initialize_cpu(char *asm_file)
   cpu.rob.head = NULL;
 
   memset(&cpu.uprf_valid, 1, sizeof(int) * PHYS_REGS_COUNT);
+  memset(&cpu.ucrf_valid, 1, sizeof(int) * PHYS_REGS_COUNT);
 
   return cpu;
 }
@@ -43,6 +44,21 @@ int get_urpf_value(Cpu cpu, int phy_reg, int *dest)
   return false;
 }
 
+int get_ucrf_value(Cpu cpu, int cc, Cc *dest) {
+  if (cc >= CC_REGS_COUNT) {
+    DBG("ERROR", "Tried to read value of C%d.", cc);
+    return false;
+  }
+
+  if (cpu.ucrf_valid[cc]) {
+    *dest = cpu.ucrf[cc];
+
+    return true;
+  }
+
+  return false;
+}
+
 void forward_register(Cpu *cpu, int rd, int value)
 {
   irs_send_forwarded_register(&cpu->irs, rd, value);
@@ -51,6 +67,23 @@ void forward_register(Cpu *cpu, int rd, int value)
 
   cpu->fw_uprf[rd] = value;
   cpu->fw_uprf_valid[rd] = true;
+}
+
+void forward_cc_register(Cpu *cpu, int cc, Cc value) {
+  cpu->fw_ucrf_valid[cc] = true;
+  cpu->fw_ucrf[cc] = value;
+}
+
+void set_cc_flags(IQE *iqe) {
+  iqe->cc_value = (Cc) { false, false, false };
+  
+  if (iqe->result_buffer == 0) {
+    iqe->cc_value.z = true;
+  } else if (iqe->result_buffer > 0) {
+    iqe->cc_value.p = true;
+  } else {
+    iqe->cc_value.n = true;
+  }
 }
 
 // Convert pc from address space to index in instruction list
@@ -128,6 +161,21 @@ void decode_2(Cpu *cpu)
     cpu->uprf_valid[cpu->decode_2.inst.rd] = false;
     DBG("INFO", "Renamed Register R%d to P%d", temp, cpu->decode_2.inst.rd);
   }
+
+  cpu->decode_2.inst.cc = get_cc_register(&cpu->rt);
+  switch (cpu->decode_2.inst.op) {
+    case OP_ADD:
+    case OP_SUB:
+    case OP_MUL:
+    case OP_DIV:
+    case OP_AND:
+    case OP_OR:
+    case OP_XOR:
+    case OP_ADDL:
+    case OP_SUBL: {
+      cpu->decode_2.inst.cc = map_cc_register(&cpu->rt);
+    }
+  }
 }
 
 void int_fu(Cpu *cpu)
@@ -149,26 +197,31 @@ void int_fu(Cpu *cpu)
     case OP_ADD:
     {
       iqe->result_buffer = iqe->rs1_value + iqe->rs2_value;
+      set_cc_flags(iqe);
       break;
     }
     case OP_SUB:
     {
-      iqe->result_buffer = iqe->rs1_valid - iqe->rs2_value;
+      iqe->result_buffer = iqe->rs1_value - iqe->rs2_value;
+      set_cc_flags(iqe);
       break;
     }
     case OP_AND:
     {
       iqe->result_buffer = iqe->rs1_value & iqe->rs2_value;
+      set_cc_flags(iqe);
       break;
     }
     case OP_OR:
     {
       iqe->result_buffer = iqe->rs1_value | iqe->rs2_value;
+      set_cc_flags(iqe);
       break;
     }
     case OP_XOR:
     {
       iqe->result_buffer = iqe->rs1_value ^ iqe->rs2_value;
+      set_cc_flags(iqe);
       break;
     }
     case OP_MOVC:
@@ -178,47 +231,67 @@ void int_fu(Cpu *cpu)
     }
     case OP_BZ:
     {
-      // TODO
+      if (iqe->cc_value.z) {
+        DBG("INFO", "Should branch BZ %c", ' ');
+      }
       break;
     }
     case OP_BNZ:
     {
-      // TODO
+      if (!iqe->cc_value.z) {
+        DBG("INFO", "Should branch BNZ %c", ' ');
+      }
       break;
     }
     case OP_ADDL:
     {
       iqe->result_buffer = iqe->rs1_value + iqe->imm;
+      set_cc_flags(iqe);
       break;
     }
     case OP_SUBL:
     {
       iqe->result_buffer = iqe->rs1_value - iqe->imm;
+      set_cc_flags(iqe);
       break;
     }
     case OP_CMP:
     {
-      // TODO
+      if (iqe->rs1_value == iqe->rs2_value) iqe->result_buffer = 0;
+      else if (iqe->rs1_value < iqe->rs2_value) iqe->result_buffer = -1;
+      else iqe->result_buffer = 1;
+
+      set_cc_flags(iqe);
       break;
     }
     case OP_CML:
     {
-      // TODO
+      if (iqe->rs1_value == iqe->imm) iqe->result_buffer = 0;
+      else if (iqe->rs1_value < iqe->imm) iqe->result_buffer = -1;
+      else iqe->result_buffer = 1;
+
+      set_cc_flags(iqe);
       break;
     }
     case OP_BP:
     {
-      // TODO
+      if (iqe->cc_value.p) {
+        DBG("INFO", "Should branch BP %c", ' ');
+      }
       break;
     }
     case OP_BN:
     {
-      // TODO
+      if (iqe->cc_value.n) {
+        DBG("INFO", "Should branch BN %c", ' ');
+      }
       break;
     }
     case OP_BNP:
     {
-      // TODO
+      if (!iqe->cc_value.p) {
+        DBG("INFO", "Should branch BNP %c", ' ');
+      }
       break;
     }
     case OP_JUMP:
@@ -266,10 +339,12 @@ void mul_fu(Cpu *cpu)
     switch (iqe->op) {
       case OP_DIV: {
         iqe->result_buffer = iqe->rs1_value / iqe->rs2_value;
+        set_cc_flags(iqe);
         break;
       }
       case OP_MUL: {
         iqe->result_buffer = iqe->rs1_value * iqe->rs2_value;
+        set_cc_flags(iqe);
         break;
       }
     default:
@@ -314,6 +389,9 @@ bool commit(Cpu *cpu)
       cpu->uprf_valid[iqe.rd] = true;
       cpu->uprf[iqe.rd] = iqe.result_buffer;
     }
+
+    cpu->ucrf_valid[iqe.cc] = true;
+    cpu->ucrf[iqe.cc] = iqe.cc_value;
   }
 
   return halt;
@@ -333,6 +411,7 @@ void forward_pipeline(Cpu *cpu)
       DBG("INFO", "Forwarding P%d -> %d", cpu->intFU.iqe->rd, cpu->intFU.iqe->result_buffer);
 
       forward_register(cpu, cpu->intFU.iqe->rd, cpu->intFU.iqe->result_buffer);
+      forward_cc_register(cpu, cpu->intFU.iqe->cc, cpu->intFU.iqe->cc_value);
     }
   }
 
@@ -347,6 +426,7 @@ void forward_pipeline(Cpu *cpu)
       DBG("INFO", "Forwarding P%d -> %d", cpu->mulFU.iqe->rd, cpu->mulFU.iqe->result_buffer);
 
       forward_register(cpu, cpu->mulFU.iqe->rd, cpu->mulFU.iqe->result_buffer);
+      forward_cc_register(cpu, cpu->mulFU.iqe->cc, cpu->mulFU.iqe->cc_value);
     }
   }
 
@@ -574,8 +654,10 @@ void print_registers(Cpu *cpu) {
   for (int i = 0; i < 4; i++) {
     printf("    ");
     for (int j = 0; j < 8; j++) {
-      int r = i * 8 + j;
-      int v = cpu->uprf[map_source_register(&cpu->rt, r)];
+      int r = map_source_register(&cpu->rt, i * 8 + j);
+      printf("r = %d\n", r);
+      int v = cpu->uprf[r];
+      printf("v = %d", v);
       printf("R%d\t[%d]\t", r, v);
     }
     printf("\n");

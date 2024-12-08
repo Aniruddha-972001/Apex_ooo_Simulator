@@ -9,7 +9,10 @@ typedef struct {
 
 typedef struct {
     int table[ARCH_REGS_COUNT]; // Mapping from architectural registers to physical registers
-    FreeList fl;
+    FreeList uprf_fl;
+
+    int cc;                     // Mapping for CC register
+    FreeList ucrf_fl;           
 } RenameTable;
 
 RenameTable initialize_rename_table();
@@ -19,3 +22,9 @@ int map_source_register(RenameTable *rt, int arch);
 
 // Maps given architectural destination register to a physical register
 int map_dest_register(RenameTable *rt, int arch);
+
+// Remaps the current cc register to a new one
+int map_cc_register(RenameTable *rt);
+
+// Gets current mapping of cc register
+int get_cc_register(RenameTable *rt);

@@ -4,12 +4,13 @@
 
 typedef struct
 {
-    int op; // Opcode of the instruction
+    int op;     // Opcode of the instruction
     int rd;     // Destination Register
     int rs1;    // Source Register 1
     int rs2;    // Source Register 2
     int rs3;    // Source Register 3
     int imm;    // Immediate Value
+    int cc;     // cc used by this inst
 } Instruction;
 
 typedef struct

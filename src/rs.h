@@ -5,6 +5,10 @@
 #include "cpu_settings.h"
 #include "instruction.h"
 
+typedef struct {
+    bool z, n, p;
+} Cc;
+
 // Instruction Queue Entry
 typedef struct {
     int op; // Opcode
@@ -14,15 +18,18 @@ typedef struct {
     int rs2;    // Register Index
     int rs3;    // Register Index
     int imm;    // Register Index
+    int cc;     // CC register
 
     int result_buffer;  // Actual values
     int rs1_value;      // Actual values
     int rs2_value;      // Actual values
     int rs3_value;      // Actual values
+    Cc cc_value;        // Actual values
 
     bool rs1_valid;
     bool rs2_valid;
     bool rs3_valid;
+    bool cc_valid;
 
     size_t timestamp;   // Cycle number
 

@@ -280,7 +280,7 @@ void read_ss(Instruction *inst, InstructionToken *it)
     reg = it->regs[0];
     if (reg[0] == 'R')
     {
-        inst->rd = atoi(reg + 1);
+        inst->rs1 = atoi(reg + 1);
     }
     else
     {
@@ -291,7 +291,7 @@ void read_ss(Instruction *inst, InstructionToken *it)
     reg = it->regs[1];
     if (reg[0] == 'R')
     {
-        inst->rs1 = atoi(reg + 1);
+        inst->rs2 = atoi(reg + 1);
     }
     else
     {
@@ -346,7 +346,7 @@ void read_i(Instruction *inst, InstructionToken *it)
 
 Instruction parse_instruction(InstructionToken *it)
 {
-    Instruction instruction = {-1, -1, -1, -1, -1, -1};
+    Instruction instruction = {-1, -1, -1, -1, -1, -1, -1};
     if (strcmp(it->op, "ADD") == 0)
     {
         instruction.op = OP_ADD;
