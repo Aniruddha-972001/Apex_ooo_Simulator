@@ -95,6 +95,30 @@ void decode_2(Cpu *cpu)
   if (!cpu->decode_2.has_inst)
     return;
 
+  if (cpu->decode_2.inst.rs1 != -1)
+  {
+    int temp = cpu->decode_2.inst.rs1;
+    cpu->decode_2.inst.rs1 =
+        map_source_register(&cpu->rt, cpu->decode_2.inst.rs1);
+    DBG("INFO", "Renamed Register R%d to P%d", temp, cpu->decode_2.inst.rs1);
+  }
+  
+  if (cpu->decode_2.inst.rs2 != -1)
+  {
+    int temp = cpu->decode_2.inst.rs2;
+    cpu->decode_2.inst.rs2 =
+        map_source_register(&cpu->rt, cpu->decode_2.inst.rs2);
+    DBG("INFO", "Renamed Register R%d to P%d", temp, cpu->decode_2.inst.rs2);
+  }
+
+  if (cpu->decode_2.inst.rs3 != -1)
+  {
+    int temp = cpu->decode_2.inst.rs3;
+    cpu->decode_2.inst.rs3 =
+        map_source_register(&cpu->rt, cpu->decode_2.inst.rs3);
+    DBG("INFO", "Renamed Register R%d to P%d", temp, cpu->decode_2.inst.rs3);
+  }
+
   // Renaming registers
   if (cpu->decode_2.inst.rd != -1)
   {
@@ -103,28 +127,6 @@ void decode_2(Cpu *cpu)
 
     cpu->uprf_valid[cpu->decode_2.inst.rd] = false;
     DBG("INFO", "Renamed Register R%d to P%d", temp, cpu->decode_2.inst.rd);
-  }
-
-  if (cpu->decode_2.inst.rs1 != -1)
-  {
-    int temp = cpu->decode_2.inst.rs1;
-    cpu->decode_2.inst.rs1 =
-        map_source_register(&cpu->rt, cpu->decode_2.inst.rs1);
-    DBG("INFO", "Renamed Register R%d to P%d", temp, cpu->decode_2.inst.rs1);
-  }
-  if (cpu->decode_2.inst.rs2 != -1)
-  {
-    int temp = cpu->decode_2.inst.rs2;
-    cpu->decode_2.inst.rs2 =
-        map_source_register(&cpu->rt, cpu->decode_2.inst.rs2);
-    DBG("INFO", "Renamed Register R%d to P%d", temp, cpu->decode_2.inst.rs2);
-  }
-  if (cpu->decode_2.inst.rs3 != -1)
-  {
-    int temp = cpu->decode_2.inst.rs3;
-    cpu->decode_2.inst.rs3 =
-        map_source_register(&cpu->rt, cpu->decode_2.inst.rs3);
-    DBG("INFO", "Renamed Register R%d to P%d", temp, cpu->decode_2.inst.rs3);
   }
 }
 
@@ -320,45 +322,6 @@ bool commit(Cpu *cpu)
 // Forwards data from each stage in the pipeline to the next stage
 void forward_pipeline(Cpu *cpu)
 {
-  // IRS -> IntFU
-  if (!cpu->intFU.has_inst)
-  {
-    IQE *iqe = {0};
-
-    if (irs_get_first_ready_iqe((void *)cpu, &iqe))
-    {
-      cpu->intFU.has_inst = true;
-      cpu->intFU.iqe = iqe;
-      cpu->intFU.cycles = INT_FU_STAGES;
-    }
-  }
-
-  // MRS -> MulFU
-  if (!cpu->mulFU.has_inst)
-  {
-    IQE *iqe = {0};
-
-    if (mrs_get_first_ready_iqe((void *)cpu, &iqe))
-    {
-      cpu->mulFU.has_inst = true;
-      cpu->mulFU.iqe = iqe;
-      cpu->mulFU.cycles = MUL_FU_STAGES;
-    }
-  }
-
-  // LSQ -> MemFU
-  if (!cpu->memFU.has_inst)
-  {
-    IQE *iqe = {0};
-
-    if (lsq_get_first_ready_iqe((void *)cpu, &iqe))
-    {
-      cpu->memFU.has_inst = true;
-      cpu->memFU.iqe = iqe;
-      cpu->memFU.cycles = MEM_FU_STAGES;
-    }
-  }
-
   // IntFU
   if (cpu->intFU.has_inst && cpu->intFU.cycles == 0)
   {
@@ -398,6 +361,45 @@ void forward_pipeline(Cpu *cpu)
       DBG("INFO", "Forwarding P%d -> %d", cpu->memFU.iqe->rd, cpu->memFU.iqe->result_buffer);
 
       forward_register(cpu, cpu->memFU.iqe->rd, cpu->memFU.iqe->result_buffer);
+    }
+  }
+
+  // IRS -> IntFU
+  if (!cpu->intFU.has_inst)
+  {
+    IQE *iqe = {0};
+
+    if (irs_get_first_ready_iqe((void *)cpu, &iqe))
+    {
+      cpu->intFU.has_inst = true;
+      cpu->intFU.iqe = iqe;
+      cpu->intFU.cycles = INT_FU_STAGES;
+    }
+  }
+
+  // MRS -> MulFU
+  if (!cpu->mulFU.has_inst)
+  {
+    IQE *iqe = {0};
+
+    if (mrs_get_first_ready_iqe((void *)cpu, &iqe))
+    {
+      cpu->mulFU.has_inst = true;
+      cpu->mulFU.iqe = iqe;
+      cpu->mulFU.cycles = MUL_FU_STAGES;
+    }
+  }
+
+  // LSQ -> MemFU
+  if (!cpu->memFU.has_inst)
+  {
+    IQE *iqe = {0};
+
+    if (lsq_get_first_ready_iqe((void *)cpu, &iqe))
+    {
+      cpu->memFU.has_inst = true;
+      cpu->memFU.iqe = iqe;
+      cpu->memFU.cycles = MEM_FU_STAGES;
     }
   }
 
