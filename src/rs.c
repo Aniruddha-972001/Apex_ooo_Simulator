@@ -233,6 +233,31 @@ bool mrs_get_first_ready_iqe(void *cpu, IQE **dest) {
 
     for (int i = 0; i < _cpu->mrs.len; i++) {
         IQE *iqe = _cpu->mrs.queue[i];
+    
+        // TODO: Do we need to check uprf as well?
+        // Try to get values from fw_uprf
+        if (iqe->rs1 != -1) {
+            if (_cpu->fw_uprf_valid[iqe->rs1]) {
+                iqe->rs1_value = _cpu->fw_uprf[iqe->rs1];
+                iqe->rs1_valid = true;
+            }
+        }
+        
+        if (iqe->rs2 != -1) {
+            if (_cpu->fw_uprf_valid[iqe->rs2]) {
+                iqe->rs2_value = _cpu->fw_uprf[iqe->rs2];
+                iqe->rs2_valid = true;
+            }
+        }
+
+        if (iqe->rs3 != -1) {
+            if (_cpu->fw_uprf_valid[iqe->rs3]) {
+                iqe->rs3_value = _cpu->fw_uprf[iqe->rs3];
+                iqe->rs3_valid = true;
+            }
+        }
+
+        // If IQE is ready move it out
         if (iqe_is_ready(*iqe)) {
             *dest = iqe;
 
