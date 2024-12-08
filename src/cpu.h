@@ -26,6 +26,10 @@ typedef struct {
 
     int uprf_valid[PHYS_REGS_COUNT];    // UPRF valid bit
     int uprf[PHYS_REGS_COUNT];          // UPRF
+
+    int fw_uprf_valid[PHYS_REGS_COUNT]; // Fworded registers 
+    int fw_uprf[PHYS_REGS_COUNT];       // Fworderede registers valid bits
+
     RenameTable rt;                     // RenameTable and FreeList
 
     // Reservation Stations

@@ -8,4 +8,4 @@ cpu: $(FILES)
 	$(CC) -o cpu $(FILES)
 
 run: cpu
-	./cpu input/input.asm
+	./cpu.exe input/input.asm

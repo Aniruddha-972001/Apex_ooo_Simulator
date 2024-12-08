@@ -77,8 +77,10 @@ void print_iqe(IQE *iqe) {
 	}
 
     if (iqe->imm != -1) {
-        printf("IMM: %d }\n", iqe->imm);
+        printf("IMM: %d ", iqe->imm);
     }
+
+    printf("}\n");
 }
 
 bool iqe_is_ready(IQE iqe) {
