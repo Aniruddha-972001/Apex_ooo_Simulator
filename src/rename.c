@@ -25,6 +25,19 @@ int fl_pop(FreeList *uprf_fl) {
     return item;
 }
 
+void print_rename_table(RenameTable rt) {
+	printf("Architectural Registers Mapping: \n");
+	for (int i = 0; i < 4; i++) {
+		printf("    ");
+		for (int j = 0; j < 8; j++) {
+			int r = i * 8 + j;
+
+			printf("R%d:\tP%d\t", r, rt.table[r]);
+		}
+		printf("\n");
+	}
+}
+
 RenameTable initialize_rename_table() {
     RenameTable rt = {0};
 
@@ -49,7 +62,7 @@ int map_source_register(RenameTable *rt, int arch) {
         DBG("ERROR", "Invalid architectural register %d", arch);
         return -1;
     }
-    
+
     return rt->table[arch];
 }
 

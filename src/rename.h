@@ -12,7 +12,7 @@ typedef struct {
     FreeList uprf_fl;
 
     int cc;                     // Mapping for CC register
-    FreeList ucrf_fl;           
+    FreeList ucrf_fl;
 } RenameTable;
 
 RenameTable initialize_rename_table();
@@ -28,3 +28,5 @@ int map_cc_register(RenameTable *rt);
 
 // Gets current mapping of cc register
 int get_cc_register(RenameTable *rt);
+
+void print_rename_table(RenameTable rt);

@@ -21,7 +21,7 @@ Cpu initialize_cpu(char *asm_file)
     cpu.rob.head = NULL;
 
     memset(&cpu.uprf_valid, 1, sizeof(int) * PHYS_REGS_COUNT);
-    memset(&cpu.ucrf_valid, 1, sizeof(int) * PHYS_REGS_COUNT);
+    memset(&cpu.ucrf_valid, 1, sizeof(int) * CC_REGS_COUNT);
 
     return cpu;
 }
@@ -686,9 +686,7 @@ void print_registers(Cpu *cpu)
         for (int j = 0; j < 8; j++)
         {
             int r = map_source_register(&cpu->rt, i * 8 + j);
-            printf("r = %d\n", r);
             int v = cpu->uprf[r];
-            printf("v = %d", v);
             printf("R%d\t[%d]\t", r, v);
         }
         printf("\n");
@@ -724,6 +722,7 @@ bool simulate_cycle(Cpu *cpu)
 
     // Print stages
     print_stages(cpu);
+    // print_rename_table(cpu->rt);
 
     // Forward data to next stage
     forward_pipeline(cpu);

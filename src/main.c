@@ -7,6 +7,7 @@
 #include "instruction.h"
 #include "cpu.h"
 #include "macros.h"
+#include "rename.h"
 
 int main(int argc, char **argv) {
 
@@ -19,7 +20,7 @@ int main(int argc, char **argv) {
     DBG("INFO", "Instructions parsed: %lu", cpu.code.len);
 
     while (!simulate_cycle(&cpu));
-    // for (int i = 0; i < 10; i++) simulate_cycle(&cpu);
+    // for (int i = 0; i < 2; i++) simulate_cycle(&cpu);
 
     return 0;
 }
