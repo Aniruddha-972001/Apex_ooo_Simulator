@@ -393,7 +393,30 @@ void mem_fu(Cpu *cpu)
 
     if (cpu->memFU.cycles == 0)
     {
-        // TODO: Perform function
+        IQE *iqe = cpu->memFU.iqe;
+
+        switch (iqe->op) {
+            case OP_LOAD: {
+                iqe->result_buffer = iqe->rs1_value + iqe->imm;
+                break;
+            }
+            case OP_STORE: {
+                iqe->result_buffer = iqe->rs2_value + iqe->imm;
+                break;
+            }
+            case OP_LDR: {
+                iqe->result_buffer = iqe->rs1_value + iqe->rs2_value;
+                break;
+            }
+            case OP_STR: {
+                iqe->result_buffer = iqe->rs2_value + iqe->rs3_value;
+                break;
+            }
+            default: {
+                DBG("WARN", "Invalid instruction found in MemFU: %s", get_op_name(iqe->op));
+                break;
+            }
+        }
     }
 }
 
@@ -408,8 +431,28 @@ bool commit(Cpu *cpu)
         {
             halt = true;
         }
-        // TODO: Do something with this IQE
-        // Also update uprf_valid
+
+        switch (iqe.op) {
+            case OP_LDR:
+            case OP_LOAD: {
+                iqe.result_buffer = cpu->memory[iqe.result_buffer];
+
+                // Forward the value loaded
+                forward_register(cpu, iqe.rd, iqe.result_buffer);
+
+                break;
+            }
+            case OP_STR:
+            case OP_STORE: {
+                cpu->memory[iqe.result_buffer] = iqe.rs1_value;
+
+                break;
+            }
+            default: {
+                // Do nothing special
+                break;
+            }
+        }
 
         if (iqe.rd != -1)
         {
@@ -462,13 +505,6 @@ void forward_pipeline(Cpu *cpu)
     {
         cpu->memFU.has_inst = false;
         cpu->memFU.iqe->completed = true;
-
-        if (cpu->memFU.iqe->rd != -1)
-        {
-            DBG("INFO", "Forwarding P%d -> %d", cpu->memFU.iqe->rd, cpu->memFU.iqe->result_buffer);
-
-            forward_register(cpu, cpu->memFU.iqe->rd, cpu->memFU.iqe->result_buffer);
-        }
     }
 
     // IRS -> IntFU
@@ -554,7 +590,7 @@ void forward_pipeline(Cpu *cpu)
     }
 }
 
-void print_stages(Cpu *cpu)
+void print_stages(const Cpu *cpu)
 {
     if (!DEBUG)
         return;
@@ -676,8 +712,7 @@ void print_stages(Cpu *cpu)
     printf(" ]\n");
 }
 
-// TODO: Fix the segmentation fault
-void print_registers(Cpu *cpu)
+void print_registers(const Cpu *cpu)
 {
     printf("Registers:\n");
     for (int i = 0; i < 4; i++)
@@ -685,11 +720,20 @@ void print_registers(Cpu *cpu)
         printf("    ");
         for (int j = 0; j < 8; j++)
         {
-            int r = map_source_register(&cpu->rt, i * 8 + j);
-            int v = cpu->uprf[r];
-            printf("R%d\t[%d]\t", r, v);
+            int arch_r = i * 8 + j;
+            int phy_r = cpu->rt.table[arch_r]; // Get current mapping for architectural register
+            int v = cpu->uprf[phy_r];
+            printf("R%d\t[%d]\t", arch_r, v);
         }
         printf("\n");
+    }
+}
+
+void print_data_memory(const Cpu *cpu) {
+    printf("Data Memory:\n");
+    // Print first 10 memory locations
+    for (int i = 0; i < 10; i++) {
+        printf("    [%d] = %d\n", i, cpu->memory[i]);
     }
 }
 
@@ -722,16 +766,12 @@ bool simulate_cycle(Cpu *cpu)
 
     // Print stages
     print_stages(cpu);
+    print_data_memory(cpu);
+    print_registers(cpu);
     // print_rename_table(cpu->rt);
 
     // Forward data to next stage
     forward_pipeline(cpu);
-
-    // Temp
-    if (sim_completed)
-    {
-        print_registers(cpu);
-    }
 
     return sim_completed;
 }

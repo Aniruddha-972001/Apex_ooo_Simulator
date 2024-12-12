@@ -24,6 +24,8 @@ typedef struct {
     int cycles;                         // Cycles counter
     int pc;                             // Program counter
 
+    int memory[DATA_MEMORY_SIZE];       // Data memory
+
     int uprf_valid[PHYS_REGS_COUNT];    // UPRF valid bit
     int uprf[PHYS_REGS_COUNT];          // UPRF
 

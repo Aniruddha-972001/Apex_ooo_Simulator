@@ -22,5 +22,7 @@ int main(int argc, char **argv) {
     while (!simulate_cycle(&cpu));
     // for (int i = 0; i < 2; i++) simulate_cycle(&cpu);
 
+    printf("Current simulation lasted for %d cycles.", cpu.cycles);
+
     return 0;
 }

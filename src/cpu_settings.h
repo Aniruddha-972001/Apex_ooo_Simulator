@@ -1,5 +1,7 @@
 #pragma once
 
+#define DATA_MEMORY_SIZE 4096
+
 #define PHYS_REGS_COUNT 60
 #define ARCH_REGS_COUNT 32
 #define CC_REGS_COUNT   10
