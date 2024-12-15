@@ -135,7 +135,11 @@ void reset_cpu_from_bis(Cpu *cpu, BisEntry bis_entry)
 }
 
 // Convert pc from address space to index in instruction list
-int pc_to_index(int pc) { return (pc - 4000) / 4; }
+int pc_to_index(int pc) { 
+    assert(pc % 4 == 0 && "Program counter was not valid.");
+    assert(pc >= 4000 && "Program counter was less than 4000.");
+    return (pc - 4000) / 4; 
+}
 
 // Fetch stage
 void fetch(Cpu *cpu)

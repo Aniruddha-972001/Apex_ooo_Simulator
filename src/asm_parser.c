@@ -679,7 +679,7 @@ InstructionTokenList parse_assembly(char *src)
     for (size_t i = 0; i <= len; i++)
     {
         char c = src[i];
-        if (is_alpha_or_digit(c) || c == '#')
+        if (is_alpha_or_digit(c) || c == '#' || c == '-')
         {
             // Store character into the token
             acc[acc_idx] = c;
