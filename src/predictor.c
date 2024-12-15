@@ -99,4 +99,7 @@ int pop_return_address(Predictor *p) {
         DBG("ERROR", "Tried to pop out of an empty return stack. %c", ' ');
         exit(1);
     }
+
+    p->rs.len -= 1;
+    return p->rs.return_addresses[p->rs.len];
 }

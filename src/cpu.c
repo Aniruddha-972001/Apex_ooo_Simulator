@@ -211,7 +211,8 @@ void fetch(Cpu *cpu)
 
         case OP_RET:
         {
-            // TODO: Return stack
+            int return_address = pop_return_address(&cpu->predictor);
+            cpu->pc = return_address;
             break;
         }
 
@@ -544,7 +545,7 @@ void int_fu(Cpu *cpu)
             else
             {
                 add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->pc + 4);
-                
+
                 if (iqe->next_pc == iqe->result_buffer)
                 {
                     DBG("INFO", "Mispredicted, need to flush. %c", ' ');
@@ -576,6 +577,7 @@ void int_fu(Cpu *cpu)
             iqe->result_buffer = iqe->imm + iqe->pc;
 
             add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->result_buffer);
+            push_return_address(&cpu->predictor, iqe->result_buffer); // Push return address into return stack
 
             // TODO: Update for main branch also
             if (iqe->next_pc != iqe->result_buffer)
