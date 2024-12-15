@@ -561,7 +561,6 @@ void int_fu(Cpu *cpu)
         {
             iqe->result_buffer = iqe->rs1_value + iqe->imm;
 
-            // TODO: Update for main branch
             if (iqe->next_pc != iqe->result_buffer)
             {
                 DBG("INFO", "Should flush JUMP %c", ' ');
@@ -579,7 +578,6 @@ void int_fu(Cpu *cpu)
             add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->result_buffer);
             push_return_address(&cpu->predictor, iqe->result_buffer); // Push return address into return stack
 
-            // TODO: Update for main branch also
             if (iqe->next_pc != iqe->result_buffer)
             {
                 DBG("INFO", "Should flush JALP %c", ' ');
@@ -595,7 +593,6 @@ void int_fu(Cpu *cpu)
 
             add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, -1); // No target address for RET
 
-            // TODO: Update for main branch also
             if (iqe->next_pc != iqe->result_buffer)
             {
                 DBG("INFO", "Should flush RET %c", ' ');
