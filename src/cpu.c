@@ -429,7 +429,7 @@ void int_fu(Cpu *cpu)
         }
         case OP_JALP:
         {
-            iqe->result_buffer += iqe->imm;
+            iqe->result_buffer = iqe->imm + iqe->pc;
             if (iqe->result_buffer > iqe->pc)
             {
                 DBG("INFO", "Should flush JALP %c", ' ');
