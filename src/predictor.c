@@ -78,8 +78,6 @@ bool get_prediction(Predictor *p, int pc, PredictorEntry *entry) {
         }
     }
 
-    // TODO: Default prediction
-
     return false;
 }
 

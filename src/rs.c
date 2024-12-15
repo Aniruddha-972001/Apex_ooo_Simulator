@@ -227,7 +227,6 @@ bool irs_get_first_ready_iqe(void *cpu, IQE **dest) {
     for (int i = 0; i < _cpu->irs.len; i++) {
         IQE *iqe = _cpu->irs.queue[i];
 
-        // TODO: Do we need to check uprf as well?
         // Try to get values from fw_uprf
         if (iqe->rs1 != -1) {
             if (_cpu->fw_uprf_valid[iqe->rs1]) {
@@ -275,7 +274,6 @@ bool mrs_get_first_ready_iqe(void *cpu, IQE **dest) {
     for (int i = 0; i < _cpu->mrs.len; i++) {
         IQE *iqe = _cpu->mrs.queue[i];
     
-        // TODO: Do we need to check uprf as well?
         // Try to get values from fw_uprf
         if (iqe->rs1 != -1) {
             if (_cpu->fw_uprf_valid[iqe->rs1]) {
@@ -321,7 +319,6 @@ bool lsq_get_first_ready_iqe(void *cpu, IQE **dest) {
     for (int i = 0; i < _cpu->lsq.len; i++) {
         IQE *iqe = _cpu->lsq.queue[i];
 
-        // TODO: Do we need to check uprf as well?
         // Try to get values from fw_uprf
         if (iqe->rs1 != -1) {
             if (_cpu->fw_uprf_valid[iqe->rs1]) {

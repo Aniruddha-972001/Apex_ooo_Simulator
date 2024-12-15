@@ -142,8 +142,6 @@ int pc_to_index(int pc)
     return (pc - 4000) / 4;
 }
 
-// TODO: Update predictor entry on misprediction
-
 // Fetch stage
 void fetch(Cpu *cpu)
 {
