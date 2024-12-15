@@ -15,6 +15,8 @@ IQE make_iqe(void *cpu, Instruction inst)
         .rs3 = inst.rs3,
         .imm = inst.imm,
         .cc = inst.cc,
+        .pc = inst.pc,
+        .next_pc = inst.next_pc,
 
         .result_buffer = 0,
         .rs1_value = 0,

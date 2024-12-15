@@ -4,6 +4,8 @@
 
 typedef struct
 {
+    int pc;     // Program Counter
+    int next_pc; // Next Program Counter 
     int op;     // Opcode of the instruction
     int rd;     // Destination Register
     int rs1;    // Source Register 1

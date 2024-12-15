@@ -1,12 +1,6 @@
-MOVC R0, #1
+MOVC R0, #0
 ADDL R1, R0, #0
-BP #1
+BZ #12
 SUBL R2, R0, #1
-BZ #1
-SUBL R3, R0, #2
-BN #1
-CMP R0, R3
-BN #1
-CML R0, #2
-BP #2
+BZ #4
 HALT

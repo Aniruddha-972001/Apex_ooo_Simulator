@@ -12,6 +12,7 @@ typedef struct {
 // Instruction Queue Entry
 typedef struct {
     int op; // Opcode
+    int pc; // Program Counter
 
     int rd;     // Register Index
     int rs1;    // Register Index
@@ -19,6 +20,8 @@ typedef struct {
     int rs3;    // Register Index
     int imm;    // Register Index
     int cc;     // CC register
+    int current_pc; //Current Instruction's pc 
+    int next_pc;    // Next Instruction's pc   
 
     int result_buffer;  // Actual values
     int rs1_value;      // Actual values

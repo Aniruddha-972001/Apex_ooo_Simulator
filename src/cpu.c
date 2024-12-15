@@ -111,11 +111,11 @@ void fetch(Cpu *cpu)
     if (index >= 0 && index < cpu->code.len)
     {
         Instruction inst = cpu->code.data[index];
-
         cpu->fetch.has_inst = true;
         cpu->fetch.inst = inst;
-
+        cpu->fetch.inst.pc = cpu->pc;
         cpu->pc += 4; // Go to next instruction
+        cpu->fetch.inst.next_pc = cpu->pc;
     }
     else
     {
@@ -246,6 +246,10 @@ void int_fu(Cpu *cpu)
             if (iqe->cc_value.z)
             {
                 DBG("INFO", "Should branch BZ %c", ' ');
+                iqe->result_buffer = iqe->pc + iqe->imm;
+                if(iqe->result_buffer!=iqe->next_pc){
+                  DBG("INFO", "Should flush BZ %c", ' ');
+                }
             }
             break;
         }
