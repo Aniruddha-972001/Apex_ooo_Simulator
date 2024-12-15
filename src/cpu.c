@@ -417,7 +417,7 @@ void int_fu(Cpu *cpu)
         case OP_JUMP:
         {
             iqe->result_buffer = iqe->rs1_value + iqe->imm;
-            if (iqe->result_buffer > iqe->pc)
+            if (iqe->next_pc != iqe->result_buffer)
             {
                 DBG("INFO", "Should flush JUMP %c", ' ');
                 flush_cpu_after(cpu, iqe->pc);
@@ -430,7 +430,7 @@ void int_fu(Cpu *cpu)
         case OP_JALP:
         {
             iqe->result_buffer = iqe->imm + iqe->pc;
-            if (iqe->result_buffer > iqe->pc)
+            if (iqe->next_pc != iqe->result_buffer)
             {
                 DBG("INFO", "Should flush JALP %c", ' ');
                 flush_cpu_after(cpu, iqe->pc);
@@ -442,7 +442,7 @@ void int_fu(Cpu *cpu)
         case OP_RET:
         {
             iqe->result_buffer = iqe->rs1_value;
-            if (iqe->result_buffer > iqe->pc)
+            if (iqe->next_pc != iqe->result_buffer)
             {
                 DBG("INFO", "Should flush JALP %c", ' ');
                 flush_cpu_after(cpu, iqe->pc);
