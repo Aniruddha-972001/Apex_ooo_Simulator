@@ -17,3 +17,5 @@
 #define MEM_FU_STAGES 3
 
 #define ROB_CAPACITY 80
+
+#define BIS_CAPACITY 60

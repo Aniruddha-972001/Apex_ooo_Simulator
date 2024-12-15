@@ -4,10 +4,7 @@
 
 #include "cpu_settings.h"
 #include "instruction.h"
-
-typedef struct {
-    bool z, n, p;
-} Cc;
+#include "bis.h"
 
 // Instruction Queue Entry
 typedef struct {
@@ -37,6 +34,8 @@ typedef struct {
     size_t timestamp;   // Cycle number
 
     bool completed;     // Execution completed
+
+    BisEntry bis_entry; // BIS Information
 } IQE;
 
 // Integer Reservation Station

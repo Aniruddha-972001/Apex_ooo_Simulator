@@ -30,6 +30,8 @@ IQE make_iqe(void *cpu, Instruction inst)
         .timestamp = _cpu->cycles,
 
         .completed = false,
+
+        .bis_entry = inst.bis_entry,
     };
 
     if (iqe.rs1 != -1)

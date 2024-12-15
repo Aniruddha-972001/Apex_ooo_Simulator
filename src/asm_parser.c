@@ -346,7 +346,21 @@ void read_i(Instruction *inst, InstructionToken *it)
 
 Instruction parse_instruction(InstructionToken *it)
 {
-    Instruction instruction = {-1, -1, -1, -1, -1, -1, -1};
+    Instruction instruction = (Instruction) {
+        .pc = -1,
+        .next_pc = -1,
+
+        .bis_entry = {0},
+
+        .op = -1,
+        .rd = -1,
+        .rs1 = -1,
+        .rs2 = -1,
+        .rs3 = -1,
+        .imm = -1,
+        .cc = -1,
+    };
+    
     if (strcmp(it->op, "ADD") == 0)
     {
         instruction.op = OP_ADD;

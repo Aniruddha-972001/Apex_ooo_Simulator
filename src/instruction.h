@@ -1,11 +1,15 @@
 #pragma once
 
 #include <stddef.h>
+#include "bis.h"
 
 typedef struct
 {
-    int pc;     // Program Counter
-    int next_pc; // Next Program Counter 
+    int pc;         // Program Counter
+    int next_pc;    // Next Program Counter 
+    
+    BisEntry bis_entry; // BIS information
+    
     int op;     // Opcode of the instruction
     int rd;     // Destination Register
     int rs1;    // Source Register 1

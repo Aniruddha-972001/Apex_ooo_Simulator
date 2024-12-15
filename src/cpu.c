@@ -96,18 +96,22 @@ void set_cc_flags(IQE *iqe)
     }
 }
 
-void flush_cpu_after(Cpu *cpu, int pc) {
+void flush_cpu_after(Cpu *cpu, int pc)
+{
     cpu->fetch.has_inst = false;
     cpu->decode_1.has_inst = false;
     cpu->decode_2.has_inst = false;
 
-    if (cpu->intFU.has_inst && cpu->intFU.iqe->pc > pc) {
+    if (cpu->intFU.has_inst && cpu->intFU.iqe->pc > pc)
+    {
         cpu->intFU.has_inst = false;
     }
-    if (cpu->mulFU.has_inst && cpu->mulFU.iqe->pc > pc) {
+    if (cpu->mulFU.has_inst && cpu->mulFU.iqe->pc > pc)
+    {
         cpu->mulFU.has_inst = false;
     }
-    if (cpu->memFU.has_inst && cpu->memFU.iqe->pc > pc) {
+    if (cpu->memFU.has_inst && cpu->memFU.iqe->pc > pc)
+    {
         cpu->memFU.has_inst = false;
     }
 
@@ -118,6 +122,16 @@ void flush_cpu_after(Cpu *cpu, int pc) {
 
     // Flush ROB
     rob_flush_after(&cpu->rob, pc);
+}
+
+void reset_cpu_from_bis(Cpu *cpu, BisEntry bis_entry)
+{
+    cpu->rt = bis_entry.rt;
+
+    memcpy(cpu->fw_ucrf, bis_entry.fw_ucrf, sizeof(Cc) * CC_REGS_COUNT);
+    memcpy(cpu->fw_ucrf_valid, bis_entry.fw_ucrf_valid, sizeof(int) * CC_REGS_COUNT);
+    memcpy(cpu->fw_uprf, bis_entry.fw_uprf, sizeof(int) * PHYS_REGS_COUNT);
+    memcpy(cpu->fw_uprf_valid, bis_entry.fw_uprf_valid, sizeof(int) * PHYS_REGS_COUNT);
 }
 
 // Convert pc from address space to index in instruction list
@@ -135,6 +149,7 @@ void fetch(Cpu *cpu)
     if (index >= 0 && index < cpu->code.len)
     {
         Instruction inst = cpu->code.data[index];
+
         cpu->fetch.has_inst = true;
         cpu->fetch.inst = inst;
         cpu->fetch.inst.pc = cpu->pc;
@@ -212,6 +227,21 @@ void decode_2(Cpu *cpu)
         cpu->decode_2.inst.cc = map_cc_register(&cpu->rt);
     }
     }
+
+    cpu->decode_2.inst.bis_entry = (BisEntry){
+        .fw_ucrf_valid = {0},
+        .fw_ucrf = {0},
+
+        .fw_uprf_valid = {0},
+        .fw_uprf = {0},
+
+        .rt = cpu->rt,
+    };
+
+    memcpy(cpu->decode_2.inst.bis_entry.fw_ucrf, cpu->fw_ucrf, sizeof(Cc) * CC_REGS_COUNT);
+    memcpy(cpu->decode_2.inst.bis_entry.fw_ucrf_valid, cpu->fw_ucrf_valid, sizeof(int) * CC_REGS_COUNT);
+    memcpy(cpu->decode_2.inst.bis_entry.fw_uprf, cpu->fw_uprf, sizeof(int) * PHYS_REGS_COUNT);
+    memcpy(cpu->decode_2.inst.bis_entry.fw_uprf_valid, cpu->fw_uprf_valid, sizeof(int) * PHYS_REGS_COUNT);
 }
 
 void int_fu(Cpu *cpu)
@@ -276,6 +306,7 @@ void int_fu(Cpu *cpu)
                     DBG("INFO", "Should flush BZ %c", ' ');
 
                     flush_cpu_after(cpu, iqe->pc);
+                    reset_cpu_from_bis(cpu, iqe->bis_entry);
                     cpu->pc = iqe->result_buffer;
                 }
             }
@@ -292,6 +323,7 @@ void int_fu(Cpu *cpu)
                     DBG("INFO", "Should flush BNZ %c", ' ');
 
                     flush_cpu_after(cpu, iqe->pc);
+                    reset_cpu_from_bis(cpu, iqe->bis_entry);
                     cpu->pc = iqe->result_buffer;
                 }
             }
@@ -337,13 +369,14 @@ void int_fu(Cpu *cpu)
         {
             if (iqe->cc_value.p)
             {
-              iqe->result_buffer = iqe->pc + iqe->imm;
-              if(iqe->result_buffer > iqe->pc){
-                DBG("INFO", "Should flush BP %c", ' ');
-                flush_cpu_after(cpu, iqe->pc);
-                cpu->pc = iqe->result_buffer;
-              }
-                
+                iqe->result_buffer = iqe->pc + iqe->imm;
+                if (iqe->result_buffer > iqe->pc)
+                {
+                    DBG("INFO", "Should flush BP %c", ' ');
+                    flush_cpu_after(cpu, iqe->pc);
+                    reset_cpu_from_bis(cpu, iqe->bis_entry);
+                    cpu->pc = iqe->result_buffer;
+                }
             }
             break;
         }
@@ -351,12 +384,14 @@ void int_fu(Cpu *cpu)
         {
             if (iqe->cc_value.n)
             {
-              iqe->result_buffer = iqe->pc + iqe->imm;
-              if(iqe->result_buffer > iqe->pc){
-                DBG("INFO", "Should branch BN %c", ' ');
-                flush_cpu_after(cpu,iqe->pc);
-                cpu->pc = iqe->result_buffer;
-              }
+                iqe->result_buffer = iqe->pc + iqe->imm;
+                if (iqe->result_buffer > iqe->pc)
+                {
+                    DBG("INFO", "Should branch BN %c", ' ');
+                    flush_cpu_after(cpu, iqe->pc);
+                    reset_cpu_from_bis(cpu, iqe->bis_entry);
+                    cpu->pc = iqe->result_buffer;
+                }
             }
             break;
         }
@@ -364,22 +399,25 @@ void int_fu(Cpu *cpu)
         {
             if (!iqe->cc_value.p)
             {
-              iqe->result_buffer = iqe->pc + iqe->imm;
-              if(iqe->result_buffer > iqe->pc){
-                DBG("INFO", "Should branch BNP %c", ' ');
-                flush_cpu_after(cpu,iqe->pc);
-                cpu->pc = iqe->result_buffer;
-              }
+                iqe->result_buffer = iqe->pc + iqe->imm;
+                if (iqe->result_buffer > iqe->pc)
+                {
+                    DBG("INFO", "Should branch BNP %c", ' ');
+                    flush_cpu_after(cpu, iqe->pc);
+                    reset_cpu_from_bis(cpu, iqe->bis_entry);
+                    cpu->pc = iqe->result_buffer;
+                }
             }
             break;
         }
         case OP_JUMP:
         {
-            // TODO
             iqe->result_buffer = iqe->rs1_value + iqe->imm;
-            if(iqe->result_buffer > iqe->pc){
-              DBG("INFO", "Should flush JUMP %c", ' ');
-                flush_cpu_after(cpu,iqe->pc);
+            if (iqe->result_buffer > iqe->pc)
+            {
+                DBG("INFO", "Should flush JUMP %c", ' ');
+                flush_cpu_after(cpu, iqe->pc);
+                reset_cpu_from_bis(cpu, iqe->bis_entry);
                 cpu->pc = iqe->result_buffer;
             }
 
@@ -387,22 +425,24 @@ void int_fu(Cpu *cpu)
         }
         case OP_JALP:
         {
-            // TODO
             iqe->result_buffer += iqe->imm;
-            if(iqe->result_buffer > iqe->pc){
-              DBG("INFO", "Should flush JALP %c", ' ');
-                flush_cpu_after(cpu,iqe->pc);
+            if (iqe->result_buffer > iqe->pc)
+            {
+                DBG("INFO", "Should flush JALP %c", ' ');
+                flush_cpu_after(cpu, iqe->pc);
+                reset_cpu_from_bis(cpu, iqe->bis_entry);
                 cpu->pc = iqe->result_buffer;
             }
             break;
         }
         case OP_RET:
         {
-            // TODO
             iqe->result_buffer = iqe->rs1_value;
-            if(iqe->result_buffer > iqe->pc){
-              DBG("INFO", "Should flush JALP %c", ' ');
-                flush_cpu_after(cpu,iqe->pc);
+            if (iqe->result_buffer > iqe->pc)
+            {
+                DBG("INFO", "Should flush JALP %c", ' ');
+                flush_cpu_after(cpu, iqe->pc);
+                reset_cpu_from_bis(cpu, iqe->bis_entry);
                 cpu->pc = iqe->result_buffer;
             }
             break;
@@ -855,7 +895,7 @@ bool simulate_cycle(Cpu *cpu)
     print_stages(cpu);
     print_data_memory(cpu);
     print_registers(cpu);
-    // print_rename_table(cpu->rt);
+    print_rename_table(cpu->rt);
 
     // Forward data to next stage
     forward_pipeline(cpu);
