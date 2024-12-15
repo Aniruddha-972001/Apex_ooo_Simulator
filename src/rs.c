@@ -394,3 +394,31 @@ void lsq_send_forwarded_register(LSQ *lsq, int phy_reg, int reg_value) {
 		update_iqe_with_forwarded(iqe, phy_reg, reg_value);
 	}
 }
+
+
+void irs_flush_after(IRS *irs, int pc) {
+    int i = 0;
+    for (; i < irs->len; i++) {
+        if (irs->queue[i]->pc > pc) break;
+    }
+    
+    irs->len = i;
+}
+
+void mrs_flush_after(MRS *mrs, int pc) {
+    int i = 0;
+    for (; i < mrs->len; i++) {
+        if (mrs->queue[i]->pc > pc) break;
+    }
+    
+    mrs->len = i;
+}
+
+void lsq_flush_after(LSQ *lsq, int pc) {
+    int i = 0;
+    for (; i < lsq->len; i++) {
+        if (lsq->queue[i]->pc > pc) break;
+    }
+    
+    lsq->len = i;
+}

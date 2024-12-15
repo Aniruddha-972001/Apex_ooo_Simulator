@@ -96,6 +96,30 @@ void set_cc_flags(IQE *iqe)
     }
 }
 
+void flush_cpu_after(Cpu *cpu, int pc) {
+    cpu->fetch.has_inst = false;
+    cpu->decode_1.has_inst = false;
+    cpu->decode_2.has_inst = false;
+
+    if (cpu->intFU.has_inst && cpu->intFU.iqe->pc > pc) {
+        cpu->intFU.has_inst = false;
+    }
+    if (cpu->mulFU.has_inst && cpu->mulFU.iqe->pc > pc) {
+        cpu->mulFU.has_inst = false;
+    }
+    if (cpu->memFU.has_inst && cpu->memFU.iqe->pc > pc) {
+        cpu->memFU.has_inst = false;
+    }
+
+    // Flush IRS, LSQ, MRS
+    irs_flush_after(&cpu->irs, pc);
+    mrs_flush_after(&cpu->mrs, pc);
+    lsq_flush_after(&cpu->lsq, pc);
+
+    // Flush ROB
+    rob_flush_after(&cpu->rob, pc);
+}
+
 // Convert pc from address space to index in instruction list
 int pc_to_index(int pc) { return (pc - 4000) / 4; }
 
@@ -245,10 +269,14 @@ void int_fu(Cpu *cpu)
         {
             if (iqe->cc_value.z)
             {
-                DBG("INFO", "Should branch BZ %c", ' ');
                 iqe->result_buffer = iqe->pc + iqe->imm;
-                if(iqe->result_buffer!=iqe->next_pc){
-                  DBG("INFO", "Should flush BZ %c", ' ');
+
+                if (iqe->result_buffer != iqe->next_pc)
+                {
+                    DBG("INFO", "Should flush BZ %c", ' ');
+
+                    flush_cpu_after(cpu, iqe->pc);
+                    cpu->pc = iqe->result_buffer;
                 }
             }
             break;
@@ -399,27 +427,33 @@ void mem_fu(Cpu *cpu)
     {
         IQE *iqe = cpu->memFU.iqe;
 
-        switch (iqe->op) {
-            case OP_LOAD: {
-                iqe->result_buffer = iqe->rs1_value + iqe->imm;
-                break;
-            }
-            case OP_STORE: {
-                iqe->result_buffer = iqe->rs2_value + iqe->imm;
-                break;
-            }
-            case OP_LDR: {
-                iqe->result_buffer = iqe->rs1_value + iqe->rs2_value;
-                break;
-            }
-            case OP_STR: {
-                iqe->result_buffer = iqe->rs2_value + iqe->rs3_value;
-                break;
-            }
-            default: {
-                DBG("WARN", "Invalid instruction found in MemFU: %s", get_op_name(iqe->op));
-                break;
-            }
+        switch (iqe->op)
+        {
+        case OP_LOAD:
+        {
+            iqe->result_buffer = iqe->rs1_value + iqe->imm;
+            break;
+        }
+        case OP_STORE:
+        {
+            iqe->result_buffer = iqe->rs2_value + iqe->imm;
+            break;
+        }
+        case OP_LDR:
+        {
+            iqe->result_buffer = iqe->rs1_value + iqe->rs2_value;
+            break;
+        }
+        case OP_STR:
+        {
+            iqe->result_buffer = iqe->rs2_value + iqe->rs3_value;
+            break;
+        }
+        default:
+        {
+            DBG("WARN", "Invalid instruction found in MemFU: %s", get_op_name(iqe->op));
+            break;
+        }
         }
     }
 }
@@ -436,26 +470,30 @@ bool commit(Cpu *cpu)
             halt = true;
         }
 
-        switch (iqe.op) {
-            case OP_LDR:
-            case OP_LOAD: {
-                iqe.result_buffer = cpu->memory[iqe.result_buffer];
+        switch (iqe.op)
+        {
+        case OP_LDR:
+        case OP_LOAD:
+        {
+            iqe.result_buffer = cpu->memory[iqe.result_buffer];
 
-                // Forward the value loaded
-                forward_register(cpu, iqe.rd, iqe.result_buffer);
+            // Forward the value loaded
+            forward_register(cpu, iqe.rd, iqe.result_buffer);
 
-                break;
-            }
-            case OP_STR:
-            case OP_STORE: {
-                cpu->memory[iqe.result_buffer] = iqe.rs1_value;
+            break;
+        }
+        case OP_STR:
+        case OP_STORE:
+        {
+            cpu->memory[iqe.result_buffer] = iqe.rs1_value;
 
-                break;
-            }
-            default: {
-                // Do nothing special
-                break;
-            }
+            break;
+        }
+        default:
+        {
+            // Do nothing special
+            break;
+        }
         }
 
         if (iqe.rd != -1)
@@ -733,10 +771,12 @@ void print_registers(const Cpu *cpu)
     }
 }
 
-void print_data_memory(const Cpu *cpu) {
+void print_data_memory(const Cpu *cpu)
+{
     printf("Data Memory:\n");
     // Print first 10 memory locations
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 10; i++)
+    {
         printf("    [%d] = %d\n", i, cpu->memory[i]);
     }
 }

@@ -55,3 +55,21 @@ IQE *rob_push_iqe(Rob *rob, IQE iqe) {
 
 	// return &node->iqe;
 }
+
+void rob_flush_after(Rob *rob, int pc) {
+    RobNode *node = rob->head;
+    while (node != NULL) {
+        if (node->iqe.pc == pc) break;
+
+        node = node->next;
+    }
+
+    RobNode *temp = node->next;
+    node->next = NULL;
+
+    while (temp != NULL) {
+        RobNode *next = temp->next;
+        free(temp);
+        temp = next;
+    }
+}

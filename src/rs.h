@@ -71,7 +71,12 @@ bool irs_get_first_ready_iqe(void *cpu, IQE **dest);
 bool mrs_get_first_ready_iqe(void *cpu, IQE **dest);
 bool lsq_get_first_ready_iqe(void *cpu, IQE **dest);
 
-// TODO: Functions to send forwarded data to each RS
+// Functions to send forwarded data to each RS
 void irs_send_forwarded_register(IRS *irs, int phy_reg, int reg_value);
 void mrs_send_forwarded_register(MRS *mrs, int phy_reg, int reg_value);
 void lsq_send_forwarded_register(LSQ *lsq, int phy_reg, int reg_value);
+
+// Flush functions
+void irs_flush_after(IRS *irs, int pc);
+void mrs_flush_after(MRS *mrs, int pc);
+void lsq_flush_after(LSQ *lsq, int pc);
