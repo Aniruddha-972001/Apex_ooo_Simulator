@@ -56,13 +56,18 @@ IQE *rob_push_iqe(Rob *rob, IQE iqe) {
 	// return &node->iqe;
 }
 
-void rob_flush_after(Rob *rob, int pc) {
+void rob_flush_after(Rob *rob, int timestamp) {
     RobNode *node = rob->head;
     while (node != NULL) {
-        if (node->iqe.pc == pc) break;
+        if (node->iqe.timestamp == timestamp) break;
 
         node = node->next;
     }
+
+	if (node == NULL) {
+		DBG("ERROR", "Tried to flush ROB for an invalid cycle timestamp: %d", timestamp);
+		exit(1);
+	}
 
     RobNode *temp = node->next;
     node->next = NULL;

@@ -19,3 +19,5 @@
 #define ROB_CAPACITY 80
 
 #define BIS_CAPACITY 60
+
+#define PREDICTOR_TABLE_SIZE 8

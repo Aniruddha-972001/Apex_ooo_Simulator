@@ -398,28 +398,28 @@ void lsq_send_forwarded_register(LSQ *lsq, int phy_reg, int reg_value) {
 }
 
 
-void irs_flush_after(IRS *irs, int pc) {
+void irs_flush_after(IRS *irs, int timestamp) {
     int i = 0;
     for (; i < irs->len; i++) {
-        if (irs->queue[i]->pc > pc) break;
+        if (irs->queue[i]->timestamp > timestamp) break;
     }
     
     irs->len = i;
 }
 
-void mrs_flush_after(MRS *mrs, int pc) {
+void mrs_flush_after(MRS *mrs, int timestamp) {
     int i = 0;
     for (; i < mrs->len; i++) {
-        if (mrs->queue[i]->pc > pc) break;
+        if (mrs->queue[i]->timestamp > timestamp) break;
     }
     
     mrs->len = i;
 }
 
-void lsq_flush_after(LSQ *lsq, int pc) {
+void lsq_flush_after(LSQ *lsq, int timestamp) {
     int i = 0;
     for (; i < lsq->len; i++) {
-        if (lsq->queue[i]->pc > pc) break;
+        if (lsq->queue[i]->timestamp > timestamp) break;
     }
     
     lsq->len = i;

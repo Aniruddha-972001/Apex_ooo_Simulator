@@ -19,4 +19,4 @@ bool rob_get_completed(Rob *rob, IQE *iqe);
 // Function to add an IQE to ROB
 IQE *rob_push_iqe(Rob *rob, IQE iqe);
 
-void rob_flush_after(Rob *rob, int pc);
+void rob_flush_after(Rob *rob, int timestamp);

@@ -96,32 +96,32 @@ void set_cc_flags(IQE *iqe)
     }
 }
 
-void flush_cpu_after(Cpu *cpu, int pc)
+void flush_cpu_after(Cpu *cpu, int timestamp)
 {
     cpu->fetch.has_inst = false;
     cpu->decode_1.has_inst = false;
     cpu->decode_2.has_inst = false;
 
-    if (cpu->intFU.has_inst && cpu->intFU.iqe->pc > pc)
+    if (cpu->intFU.has_inst && cpu->intFU.iqe->timestamp > timestamp)
     {
         cpu->intFU.has_inst = false;
     }
-    if (cpu->mulFU.has_inst && cpu->mulFU.iqe->pc > pc)
+    if (cpu->mulFU.has_inst && cpu->mulFU.iqe->timestamp > timestamp)
     {
         cpu->mulFU.has_inst = false;
     }
-    if (cpu->memFU.has_inst && cpu->memFU.iqe->pc > pc)
+    if (cpu->memFU.has_inst && cpu->memFU.iqe->timestamp > timestamp)
     {
         cpu->memFU.has_inst = false;
     }
 
     // Flush IRS, LSQ, MRS
-    irs_flush_after(&cpu->irs, pc);
-    mrs_flush_after(&cpu->mrs, pc);
-    lsq_flush_after(&cpu->lsq, pc);
+    irs_flush_after(&cpu->irs, timestamp);
+    mrs_flush_after(&cpu->mrs, timestamp);
+    lsq_flush_after(&cpu->lsq, timestamp);
 
     // Flush ROB
-    rob_flush_after(&cpu->rob, pc);
+    rob_flush_after(&cpu->rob, timestamp);
 }
 
 void reset_cpu_from_bis(Cpu *cpu, BisEntry bis_entry)
@@ -135,11 +135,14 @@ void reset_cpu_from_bis(Cpu *cpu, BisEntry bis_entry)
 }
 
 // Convert pc from address space to index in instruction list
-int pc_to_index(int pc) { 
+int pc_to_index(int pc)
+{
     assert(pc % 4 == 0 && "Program counter was not valid.");
     assert(pc >= 4000 && "Program counter was less than 4000.");
-    return (pc - 4000) / 4; 
+    return (pc - 4000) / 4;
 }
+
+// TODO: Update predictor entry on misprediction
 
 // Fetch stage
 void fetch(Cpu *cpu)
@@ -157,7 +160,67 @@ void fetch(Cpu *cpu)
         cpu->fetch.has_inst = true;
         cpu->fetch.inst = inst;
         cpu->fetch.inst.pc = cpu->pc;
+
         cpu->pc += 4; // Go to next instruction
+        // Get prediction
+        switch (inst.op)
+        {
+        case OP_BZ:
+        case OP_BNZ:
+        case OP_BP:
+        case OP_BN:
+        case OP_BNP:
+        {
+            PredictorEntry entry = {0};
+            bool predicted = get_prediction(&cpu->predictor, inst.pc, &entry);
+
+            if (predicted)
+            {
+                cpu->pc = entry.target_address;
+            }
+            else
+            {
+                // Default prediction
+                if (inst.imm < 0)
+                {
+                    // Negative offset is always taken
+                    cpu->pc = inst.pc + inst.imm;
+                }
+                // Positive offset will continue to next instruction
+            }
+
+            break;
+        }
+
+        case OP_JALP:
+        {
+            PredictorEntry entry = {0};
+            bool predicted = get_prediction(&cpu->predictor, inst.pc, &entry);
+
+            if (predicted)
+            {
+                cpu->pc = entry.target_address;
+            }
+            else
+            {
+                // Default prediction is always taken
+                cpu->pc = inst.pc + inst.imm;
+            }
+            break;
+        }
+
+        case OP_RET:
+        {
+            // TODO: Return stack
+            break;
+        }
+
+        default:
+        {
+            break;
+        }
+        }
+
         cpu->fetch.inst.next_pc = cpu->pc;
     }
     else
@@ -301,19 +364,35 @@ void int_fu(Cpu *cpu)
         }
         case OP_BZ:
         {
+            iqe->result_buffer = iqe->pc + iqe->imm;
+
             if (iqe->cc_value.z)
             {
-                iqe->result_buffer = iqe->pc + iqe->imm;
+                add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->result_buffer);
 
                 if (iqe->result_buffer != iqe->next_pc)
                 {
                     DBG("INFO", "Should flush BZ %c", ' ');
 
-                    flush_cpu_after(cpu, iqe->pc);
+                    flush_cpu_after(cpu, iqe->timestamp);
                     reset_cpu_from_bis(cpu, iqe->bis_entry);
                     cpu->pc = iqe->result_buffer;
                 }
             }
+            else
+            {
+                add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->pc + 4);
+
+                if (iqe->next_pc == iqe->result_buffer)
+                {
+                    DBG("INFO", "Mispredicted, need to flush. %c", ' ');
+
+                    flush_cpu_after(cpu, iqe->timestamp);
+                    reset_cpu_from_bis(cpu, iqe->bis_entry);
+                    cpu->pc = iqe->pc + 4; // Reset to next instruction after branch
+                }
+            }
+
             break;
         }
         case OP_BNZ:
@@ -322,13 +401,28 @@ void int_fu(Cpu *cpu)
             {
                 iqe->result_buffer = iqe->pc + iqe->imm;
 
+                add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->result_buffer);
+
                 if (iqe->result_buffer != iqe->next_pc)
                 {
                     DBG("INFO", "Should flush BNZ %c", ' ');
 
-                    flush_cpu_after(cpu, iqe->pc);
+                    flush_cpu_after(cpu, iqe->timestamp);
                     reset_cpu_from_bis(cpu, iqe->bis_entry);
                     cpu->pc = iqe->result_buffer;
+                }
+            }
+            else
+            {
+                add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->pc + 4);
+
+                if (iqe->next_pc == iqe->result_buffer)
+                {
+                    DBG("INFO", "Mispredicted, need to flush. %c", ' ');
+
+                    flush_cpu_after(cpu, iqe->timestamp);
+                    reset_cpu_from_bis(cpu, iqe->bis_entry);
+                    cpu->pc = iqe->pc + 4; // Reset to next instruction after branch
                 }
             }
             break;
@@ -374,12 +468,28 @@ void int_fu(Cpu *cpu)
             if (iqe->cc_value.p)
             {
                 iqe->result_buffer = iqe->pc + iqe->imm;
+
+                add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->result_buffer);
+
                 if (iqe->result_buffer > iqe->pc)
                 {
                     DBG("INFO", "Should flush BP %c", ' ');
-                    flush_cpu_after(cpu, iqe->pc);
+                    flush_cpu_after(cpu, iqe->timestamp);
                     reset_cpu_from_bis(cpu, iqe->bis_entry);
                     cpu->pc = iqe->result_buffer;
+                }
+            }
+            else
+            {
+                add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->pc + 4);
+
+                if (iqe->next_pc == iqe->result_buffer)
+                {
+                    DBG("INFO", "Mispredicted, need to flush. %c", ' ');
+
+                    flush_cpu_after(cpu, iqe->timestamp);
+                    reset_cpu_from_bis(cpu, iqe->bis_entry);
+                    cpu->pc = iqe->pc + 4; // Reset to next instruction after branch
                 }
             }
             break;
@@ -389,12 +499,28 @@ void int_fu(Cpu *cpu)
             if (iqe->cc_value.n)
             {
                 iqe->result_buffer = iqe->pc + iqe->imm;
+
+                add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->result_buffer);
+
                 if (iqe->result_buffer > iqe->pc)
                 {
                     DBG("INFO", "Should branch BN %c", ' ');
-                    flush_cpu_after(cpu, iqe->pc);
+                    flush_cpu_after(cpu, iqe->timestamp);
                     reset_cpu_from_bis(cpu, iqe->bis_entry);
                     cpu->pc = iqe->result_buffer;
+                }
+            }
+            else
+            {
+                add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->pc + 4);
+
+                if (iqe->next_pc == iqe->result_buffer)
+                {
+                    DBG("INFO", "Mispredicted, need to flush. %c", ' ');
+
+                    flush_cpu_after(cpu, iqe->timestamp);
+                    reset_cpu_from_bis(cpu, iqe->bis_entry);
+                    cpu->pc = iqe->pc + 4; // Reset to next instruction after branch
                 }
             }
             break;
@@ -404,12 +530,28 @@ void int_fu(Cpu *cpu)
             if (!iqe->cc_value.p)
             {
                 iqe->result_buffer = iqe->pc + iqe->imm;
+
+                add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->result_buffer);
+
                 if (iqe->result_buffer > iqe->pc)
                 {
                     DBG("INFO", "Should branch BNP %c", ' ');
-                    flush_cpu_after(cpu, iqe->pc);
+                    flush_cpu_after(cpu, iqe->timestamp);
                     reset_cpu_from_bis(cpu, iqe->bis_entry);
                     cpu->pc = iqe->result_buffer;
+                }
+            }
+            else
+            {
+                add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->pc + 4);
+                
+                if (iqe->next_pc == iqe->result_buffer)
+                {
+                    DBG("INFO", "Mispredicted, need to flush. %c", ' ');
+
+                    flush_cpu_after(cpu, iqe->timestamp);
+                    reset_cpu_from_bis(cpu, iqe->bis_entry);
+                    cpu->pc = iqe->pc + 4; // Reset to next instruction after branch
                 }
             }
             break;
@@ -417,10 +559,12 @@ void int_fu(Cpu *cpu)
         case OP_JUMP:
         {
             iqe->result_buffer = iqe->rs1_value + iqe->imm;
-            if (iqe->result_buffer > iqe->pc)
+
+            // TODO: Update for main branch
+            if (iqe->next_pc != iqe->result_buffer)
             {
                 DBG("INFO", "Should flush JUMP %c", ' ');
-                flush_cpu_after(cpu, iqe->pc);
+                flush_cpu_after(cpu, iqe->timestamp);
                 reset_cpu_from_bis(cpu, iqe->bis_entry);
                 cpu->pc = iqe->result_buffer;
             }
@@ -430,10 +574,14 @@ void int_fu(Cpu *cpu)
         case OP_JALP:
         {
             iqe->result_buffer = iqe->imm + iqe->pc;
-            if (iqe->result_buffer > iqe->pc)
+
+            add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->result_buffer);
+
+            // TODO: Update for main branch also
+            if (iqe->next_pc != iqe->result_buffer)
             {
                 DBG("INFO", "Should flush JALP %c", ' ');
-                flush_cpu_after(cpu, iqe->pc);
+                flush_cpu_after(cpu, iqe->timestamp);
                 reset_cpu_from_bis(cpu, iqe->bis_entry);
                 cpu->pc = iqe->result_buffer;
             }
@@ -442,10 +590,14 @@ void int_fu(Cpu *cpu)
         case OP_RET:
         {
             iqe->result_buffer = iqe->rs1_value;
-            if (iqe->result_buffer > iqe->pc)
+
+            add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, -1); // No target address for RET
+
+            // TODO: Update for main branch also
+            if (iqe->next_pc != iqe->result_buffer)
             {
-                DBG("INFO", "Should flush JALP %c", ' ');
-                flush_cpu_after(cpu, iqe->pc);
+                DBG("INFO", "Should flush RET %c", ' ');
+                flush_cpu_after(cpu, iqe->timestamp);
                 reset_cpu_from_bis(cpu, iqe->bis_entry);
                 cpu->pc = iqe->result_buffer;
             }

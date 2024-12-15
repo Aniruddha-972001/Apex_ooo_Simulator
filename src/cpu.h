@@ -6,6 +6,7 @@
 #include "rename.h"
 #include "rob.h"
 #include "rs.h"
+#include "predictor.h"
 
 typedef struct {
     bool has_inst;
@@ -39,6 +40,8 @@ typedef struct {
     Cc fw_ucrf[CC_REGS_COUNT];          // Forwarded CC registers
 
     RenameTable rt;                     // RenameTable and FreeList
+
+    Predictor predictor;                // Predictor
 
     // Reservation Stations
     IRS irs;

@@ -76,6 +76,6 @@ void mrs_send_forwarded_register(MRS *mrs, int phy_reg, int reg_value);
 void lsq_send_forwarded_register(LSQ *lsq, int phy_reg, int reg_value);
 
 // Flush functions
-void irs_flush_after(IRS *irs, int pc);
-void mrs_flush_after(MRS *mrs, int pc);
-void lsq_flush_after(LSQ *lsq, int pc);
+void irs_flush_after(IRS *irs, int timestamp);
+void mrs_flush_after(MRS *mrs, int timestamp);
+void lsq_flush_after(LSQ *lsq, int timestamp);
