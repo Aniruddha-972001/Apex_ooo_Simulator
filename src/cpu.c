@@ -285,7 +285,15 @@ void int_fu(Cpu *cpu)
         {
             if (!iqe->cc_value.z)
             {
-                DBG("INFO", "Should branch BNZ %c", ' ');
+                iqe->result_buffer = iqe->pc + iqe->imm;
+
+                if (iqe->result_buffer != iqe->next_pc)
+                {
+                    DBG("INFO", "Should flush BNZ %c", ' ');
+
+                    flush_cpu_after(cpu, iqe->pc);
+                    cpu->pc = iqe->result_buffer;
+                }
             }
             break;
         }
@@ -329,7 +337,13 @@ void int_fu(Cpu *cpu)
         {
             if (iqe->cc_value.p)
             {
-                DBG("INFO", "Should branch BP %c", ' ');
+              iqe->result_buffer = iqe->pc + iqe->imm;
+              if(iqe->result_buffer > iqe->pc){
+                DBG("INFO", "Should flush BP %c", ' ');
+                flush_cpu_after(cpu, iqe->pc);
+                cpu->pc = iqe->result_buffer;
+              }
+                
             }
             break;
         }
@@ -337,7 +351,12 @@ void int_fu(Cpu *cpu)
         {
             if (iqe->cc_value.n)
             {
+              iqe->result_buffer = iqe->pc + iqe->imm;
+              if(iqe->result_buffer > iqe->pc){
                 DBG("INFO", "Should branch BN %c", ' ');
+                flush_cpu_after(cpu,iqe->pc);
+                cpu->pc = iqe->result_buffer;
+              }
             }
             break;
         }
@@ -345,23 +364,47 @@ void int_fu(Cpu *cpu)
         {
             if (!iqe->cc_value.p)
             {
+              iqe->result_buffer = iqe->pc + iqe->imm;
+              if(iqe->result_buffer > iqe->pc){
                 DBG("INFO", "Should branch BNP %c", ' ');
+                flush_cpu_after(cpu,iqe->pc);
+                cpu->pc = iqe->result_buffer;
+              }
             }
             break;
         }
         case OP_JUMP:
         {
             // TODO
+            iqe->result_buffer = iqe->rs1_value + iqe->imm;
+            if(iqe->result_buffer > iqe->pc){
+              DBG("INFO", "Should flush JUMP %c", ' ');
+                flush_cpu_after(cpu,iqe->pc);
+                cpu->pc = iqe->result_buffer;
+            }
+
             break;
         }
         case OP_JALP:
         {
             // TODO
+            iqe->result_buffer += iqe->imm;
+            if(iqe->result_buffer > iqe->pc){
+              DBG("INFO", "Should flush JALP %c", ' ');
+                flush_cpu_after(cpu,iqe->pc);
+                cpu->pc = iqe->result_buffer;
+            }
             break;
         }
         case OP_RET:
         {
             // TODO
+            iqe->result_buffer = iqe->rs1_value;
+            if(iqe->result_buffer > iqe->pc){
+              DBG("INFO", "Should flush JALP %c", ' ');
+                flush_cpu_after(cpu,iqe->pc);
+                cpu->pc = iqe->result_buffer;
+            }
             break;
         }
         case OP_NOP:
