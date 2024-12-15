@@ -1,5 +1,7 @@
 #include "predictor.h"
+#include "macros.h"
 #include <string.h>
+#include <stdlib.h>
 
 void add_predictor_entry(Predictor *p, int pc, int op, int target) {
     // If predictorEntry already exists for this pc, then only need to update it...
@@ -61,7 +63,7 @@ void update_predictor_entry(Predictor *p, int pc, int target) {
 
         if (entry_i.pc == pc) {
             p->table[i].target_address = target;
-            return true;
+            return;
         }
     }
 }
@@ -79,4 +81,22 @@ bool get_prediction(Predictor *p, int pc, PredictorEntry *entry) {
     // TODO: Default prediction
 
     return false;
+}
+
+
+void push_return_address(Predictor *p, int target) {
+    if (p->rs.len == RETURN_STACK_SIZE) {
+        DBG("ERROR", "Tried to push into a full return stack. %c", ' ');
+        exit(1);
+    }
+
+    p->rs.return_addresses[p->rs.len] = target;
+    p->rs.len += 1;
+}
+
+int pop_return_address(Predictor *p) {
+    if (p->rs.len == 0) {
+        DBG("ERROR", "Tried to pop out of an empty return stack. %c", ' ');
+        exit(1);
+    }
 }
