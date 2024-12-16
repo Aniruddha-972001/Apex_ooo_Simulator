@@ -565,7 +565,7 @@ bool commit(Cpu *cpu)
         case OP_LDR:
         case OP_LOAD:
         {
-            iqe.result_buffer = cpu->memory[iqe.result_buffer];
+            iqe.result_buffer = cpu->memory[iqe.result_buffer / 4];
 
             // Forward the value loaded
             forward_register(cpu, iqe.rd, iqe.result_buffer);
@@ -575,7 +575,7 @@ bool commit(Cpu *cpu)
         case OP_STR:
         case OP_STORE:
         {
-            cpu->memory[iqe.result_buffer] = iqe.rs1_value;
+            cpu->memory[iqe.result_buffer / 4] = iqe.rs1_value;
 
             break;
         }
