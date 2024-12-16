@@ -215,6 +215,7 @@ void decode_2(Cpu *cpu)
         cpu->decode_2.inst.rd = map_dest_register(&cpu->rt, cpu->decode_2.inst.rd);
 
         cpu->uprf_valid[cpu->decode_2.inst.rd] = false;
+        cpu->fw_uprf_valid[cpu->decode_2.inst.rd] = false;
         DBG("INFO", "Renamed Register R%d to P%d", temp, cpu->decode_2.inst.rd);
     }
 
@@ -420,26 +421,24 @@ void int_fu(Cpu *cpu)
         case OP_JUMP:
         {
             iqe->result_buffer = iqe->rs1_value + iqe->imm;
-            if (iqe->next_pc != iqe->result_buffer)
-            {
-                DBG("INFO", "Should flush JUMP %c", ' ');
-                flush_cpu_after(cpu, iqe->pc);
-                reset_cpu_from_bis(cpu, iqe->bis_entry);
-                cpu->pc = iqe->result_buffer;
-            }
+
+            DBG("INFO", "Should jump JUMP to %d", iqe->result_buffer);
+            flush_cpu_after(cpu, iqe->pc);
+            reset_cpu_from_bis(cpu, iqe->bis_entry);
+            cpu->pc = iqe->result_buffer;
 
             break;
         }
         case OP_JALP:
         {
-            iqe->result_buffer = iqe->imm + iqe->pc;
-            if (iqe->next_pc != iqe->result_buffer)
-            {
-                DBG("INFO", "Should flush JALP %c", ' ');
-                flush_cpu_after(cpu, iqe->pc);
-                reset_cpu_from_bis(cpu, iqe->bis_entry);
-                cpu->pc = iqe->result_buffer;
-            }
+            int jump_addr = iqe->imm + iqe->pc;
+            iqe->result_buffer = iqe->pc + 4;
+
+            DBG("INFO", "Should jump JALP to %d with return address %d", jump_addr, iqe->result_buffer);
+            flush_cpu_after(cpu, iqe->pc);
+            reset_cpu_from_bis(cpu, iqe->bis_entry);
+            cpu->pc = jump_addr;
+                
             break;
         }
         case OP_RET:
@@ -557,6 +556,7 @@ bool commit(Cpu *cpu)
     {
         if (iqe.op == OP_HALT)
         {
+            reset_cpu_from_bis(cpu, iqe.bis_entry);
             halt = true;
         }
 
@@ -565,7 +565,7 @@ bool commit(Cpu *cpu)
         case OP_LDR:
         case OP_LOAD:
         {
-            iqe.result_buffer = cpu->memory[iqe.result_buffer / 4];
+            iqe.result_buffer = cpu->memory[iqe.result_buffer];
 
             // Forward the value loaded
             forward_register(cpu, iqe.rd, iqe.result_buffer);
@@ -575,7 +575,7 @@ bool commit(Cpu *cpu)
         case OP_STR:
         case OP_STORE:
         {
-            cpu->memory[iqe.result_buffer / 4] = iqe.rs1_value;
+            cpu->memory[iqe.result_buffer] = iqe.rs1_value;
 
             break;
         }

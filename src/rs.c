@@ -229,21 +229,21 @@ bool irs_get_first_ready_iqe(void *cpu, IQE **dest) {
 
         // TODO: Do we need to check uprf as well?
         // Try to get values from fw_uprf
-        if (iqe->rs1 != -1) {
+        if (iqe->rs1 != -1 && !iqe->rs1_valid) {
             if (_cpu->fw_uprf_valid[iqe->rs1]) {
                 iqe->rs1_value = _cpu->fw_uprf[iqe->rs1];
                 iqe->rs1_valid = true;
             }
         }
         
-        if (iqe->rs2 != -1) {
+        if (iqe->rs2 != -1 && !iqe->rs2_valid) {
             if (_cpu->fw_uprf_valid[iqe->rs2]) {
                 iqe->rs2_value = _cpu->fw_uprf[iqe->rs2];
                 iqe->rs2_valid = true;
             }
         }
 
-        if (iqe->rs3 != -1) {
+        if (iqe->rs3 != -1 && !iqe->rs3_valid) {
             if (_cpu->fw_uprf_valid[iqe->rs3]) {
                 iqe->rs3_value = _cpu->fw_uprf[iqe->rs3];
                 iqe->rs3_valid = true;
@@ -277,21 +277,21 @@ bool mrs_get_first_ready_iqe(void *cpu, IQE **dest) {
     
         // TODO: Do we need to check uprf as well?
         // Try to get values from fw_uprf
-        if (iqe->rs1 != -1) {
+        if (iqe->rs1 != -1 && !iqe->rs1_valid) {
             if (_cpu->fw_uprf_valid[iqe->rs1]) {
                 iqe->rs1_value = _cpu->fw_uprf[iqe->rs1];
                 iqe->rs1_valid = true;
             }
         }
         
-        if (iqe->rs2 != -1) {
+        if (iqe->rs2 != -1 && !iqe->rs2_valid) {
             if (_cpu->fw_uprf_valid[iqe->rs2]) {
                 iqe->rs2_value = _cpu->fw_uprf[iqe->rs2];
                 iqe->rs2_valid = true;
             }
         }
 
-        if (iqe->rs3 != -1) {
+        if (iqe->rs3 != -1 && !iqe->rs3_valid) {
             if (_cpu->fw_uprf_valid[iqe->rs3]) {
                 iqe->rs3_value = _cpu->fw_uprf[iqe->rs3];
                 iqe->rs3_valid = true;
@@ -323,21 +323,21 @@ bool lsq_get_first_ready_iqe(void *cpu, IQE **dest) {
 
         // TODO: Do we need to check uprf as well?
         // Try to get values from fw_uprf
-        if (iqe->rs1 != -1) {
+        if (iqe->rs1 != -1 && !iqe->rs1_valid) {
             if (_cpu->fw_uprf_valid[iqe->rs1]) {
                 iqe->rs1_value = _cpu->fw_uprf[iqe->rs1];
                 iqe->rs1_valid = true;
             }
         }
         
-        if (iqe->rs2 != -1) {
+        if (iqe->rs2 != -1 && !iqe->rs2_valid) {
             if (_cpu->fw_uprf_valid[iqe->rs2]) {
                 iqe->rs2_value = _cpu->fw_uprf[iqe->rs2];
                 iqe->rs2_valid = true;
             }
         }
 
-        if (iqe->rs3 != -1) {
+        if (iqe->rs3 != -1 && !iqe->rs3_valid) {
             if (_cpu->fw_uprf_valid[iqe->rs3]) {
                 iqe->rs3_value = _cpu->fw_uprf[iqe->rs3];
                 iqe->rs3_valid = true;

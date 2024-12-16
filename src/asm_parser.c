@@ -313,7 +313,7 @@ void read_s(Instruction *inst, InstructionToken *it)
     reg = it->regs[0];
     if (reg[0] == 'R')
     {
-        inst->rd = atoi(reg + 1);
+        inst->rs1 = atoi(reg + 1);
     }
     else
     {
