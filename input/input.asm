@@ -1,4 +1,0 @@
-MOVC R1, #4
-ADDL R2, R1, #6
-MUL R3, R2, R1
-HALT
