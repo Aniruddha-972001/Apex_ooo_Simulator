@@ -8,6 +8,8 @@
 #include "rename.h"
 #include "rob.h"
 #include "rs.h"
+#include "util.h"
+#include "commands.h"
 
 Cpu initialize_cpu(char *asm_file)
 {
@@ -1054,4 +1056,94 @@ bool simulate_cycle(Cpu *cpu)
     forward_pipeline(cpu);
 
     return sim_completed;
+}
+
+void display(Cpu *cpu){
+    if (cpu == NULL) {
+        printf("Cpu was not initialized. Please run the 'Initialize' command.\n");
+        return;
+    }
+
+    printf("----------\n%s\n----------\n", "Stages:");
+
+    // All stages
+    print_stages(cpu);
+
+    // All regs
+    print_registers(cpu);
+
+    // Flags
+    //print_flags(cpu);
+
+    // First 10 mem locations
+    print_data_memory(cpu);
+}
+
+void show_mem(Cpu *cpu, int address){
+    if (cpu == NULL) {
+        printf("Cpu was not initialized. Please run the 'Initialize' command.\n");
+        return;
+    }
+
+    if (address < 0 || address >= DATA_MEMORY_SIZE) {
+        printf("Invalid address provided. Please enter an address between 0 and %d.\n", DATA_MEMORY_SIZE-1);
+        return;
+    }
+
+    printf("----------\n%s\n----------\n", "Data Memory:");
+    printf("[0x%X] | %d\n", address, cpu->memory[address]);
+}
+
+void set_memory(Cpu *cpu, char *filename){
+        if (cpu == NULL) {
+        printf("Cpu was not initialized. Please run the 'Initialize' command.\n");
+        return;
+    }
+    
+    FILE *fp;
+    ssize_t nread;
+    size_t len = 0;
+    char *line = NULL;
+    int data_memory_idx = 0;
+
+    if (!filename)
+    {
+        printf("No file name provided.\n");
+        return;
+    }
+
+    fp = fopen(filename, "r");
+    if (!fp)
+    {
+        printf("Failed to open file %s.\n", filename);
+        return;
+    }
+
+    nread = getline(&line, &len, fp);
+    if (nread == -1) {
+        printf("Memory file was empty.\n");
+        return;
+    }
+
+    // Keep getting numbers separated by ','
+    trim(line);
+
+    char *token = strtok(line, ",");
+
+    while (token != NULL) {
+        trim(token);
+        int value = atoi(token);
+
+        if (data_memory_idx >= DATA_MEMORY_SIZE) {
+            printf("Too many values provided in memory file. Terminating early.\n");
+            return;
+        }
+        cpu->memory[data_memory_idx] = value; // Update data memory
+        data_memory_idx += 1;
+
+        token = strtok(NULL, ",");
+    }
+
+    free(line);
+    fclose(fp);
 }

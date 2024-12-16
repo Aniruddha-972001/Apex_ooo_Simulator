@@ -77,3 +77,9 @@ int get_ucrf_value(Cpu cpu, int cc, Cc *dest);
 // Returns `true` if HALT instruction was completed
 // Else returns `false`
 bool simulate_cycle(Cpu *cpu);
+
+void display(Cpu *cpu);
+
+void show_mem(Cpu *cpu, int address);
+
+void set_memory(Cpu *cpu, char *filename);
