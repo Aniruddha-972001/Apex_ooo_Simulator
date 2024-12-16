@@ -3,6 +3,7 @@
 #include "cpu_settings.h"
 #include "cpu_structs.h"
 #include "rename.h"
+#include "predictor.h"
 
 typedef struct {
     int fw_uprf_valid[PHYS_REGS_COUNT]; // Forwarded registers valid bits
@@ -12,4 +13,6 @@ typedef struct {
     Cc fw_ucrf[CC_REGS_COUNT];          // Forwarded CC registers
 
     RenameTable rt;                     // RenameTable and FreeList
+
+    Predictor p;                        // Predictor
 } BisEntry;

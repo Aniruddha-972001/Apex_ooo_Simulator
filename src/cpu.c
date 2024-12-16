@@ -130,6 +130,7 @@ void flush_cpu_after(Cpu *cpu, int timestamp)
 void reset_cpu_from_bis(Cpu *cpu, BisEntry bis_entry)
 {
     cpu->rt = bis_entry.rt;
+    cpu->predictor = bis_entry.p;
 
     memcpy(cpu->fw_ucrf, bis_entry.fw_ucrf, sizeof(Cc) * CC_REGS_COUNT);
     memcpy(cpu->fw_ucrf_valid, bis_entry.fw_ucrf_valid, sizeof(int) * CC_REGS_COUNT);
@@ -157,10 +158,10 @@ void fetch(Cpu *cpu)
     if (index >= 0 && index < cpu->code.len)
     {
         Instruction inst = cpu->code.data[index];
+        inst.pc = cpu->pc;
 
         cpu->fetch.has_inst = true;
         cpu->fetch.inst = inst;
-        cpu->fetch.inst.pc = cpu->pc;
 
         cpu->pc += 4; // Go to next instruction
         // Get prediction
@@ -207,6 +208,10 @@ void fetch(Cpu *cpu)
                 // Default prediction is always taken
                 cpu->pc = inst.pc + inst.imm;
             }
+
+            int return_address = inst.pc + 4;
+            push_return_address(&cpu->predictor, return_address);
+
             break;
         }
 
@@ -277,6 +282,7 @@ void decode_2(Cpu *cpu)
         cpu->decode_2.inst.rd = map_dest_register(&cpu->rt, cpu->decode_2.inst.rd);
 
         cpu->uprf_valid[cpu->decode_2.inst.rd] = false;
+        cpu->fw_uprf_valid[cpu->decode_2.inst.rd] = false;
         DBG("INFO", "Renamed Register R%d to P%d", temp, cpu->decode_2.inst.rd);
     }
 
@@ -305,6 +311,7 @@ void decode_2(Cpu *cpu)
         .fw_uprf = {0},
 
         .rt = cpu->rt,
+        .p = cpu->predictor,
     };
 
     memcpy(cpu->decode_2.inst.bis_entry.fw_ucrf, cpu->fw_ucrf, sizeof(Cc) * CC_REGS_COUNT);
@@ -385,7 +392,7 @@ void int_fu(Cpu *cpu)
             {
                 add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->pc + 4);
 
-                if (iqe->next_pc == iqe->result_buffer)
+                if (iqe->next_pc != iqe->pc + 4)
                 {
                     DBG("INFO", "Mispredicted, need to flush. %c", ' ');
 
@@ -418,7 +425,7 @@ void int_fu(Cpu *cpu)
             {
                 add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->pc + 4);
 
-                if (iqe->next_pc == iqe->result_buffer)
+                if (iqe->next_pc != iqe->pc + 4)
                 {
                     DBG("INFO", "Mispredicted, need to flush. %c", ' ');
 
@@ -485,7 +492,7 @@ void int_fu(Cpu *cpu)
             {
                 add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->pc + 4);
 
-                if (iqe->next_pc == iqe->result_buffer)
+                if (iqe->next_pc != iqe->pc + 4)
                 {
                     DBG("INFO", "Mispredicted, need to flush. %c", ' ');
 
@@ -516,7 +523,7 @@ void int_fu(Cpu *cpu)
             {
                 add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->pc + 4);
 
-                if (iqe->next_pc == iqe->result_buffer)
+                if (iqe->next_pc != iqe->pc + 4)
                 {
                     DBG("INFO", "Mispredicted, need to flush. %c", ' ');
 
@@ -547,7 +554,7 @@ void int_fu(Cpu *cpu)
             {
                 add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->pc + 4);
 
-                if (iqe->next_pc == iqe->result_buffer)
+                if (iqe->next_pc != iqe->pc + 4)
                 {
                     DBG("INFO", "Mispredicted, need to flush. %c", ' ');
 
@@ -562,30 +569,26 @@ void int_fu(Cpu *cpu)
         {
             iqe->result_buffer = iqe->rs1_value + iqe->imm;
 
-            if (iqe->next_pc != iqe->result_buffer)
-            {
-                DBG("INFO", "Should flush JUMP %c", ' ');
-                flush_cpu_after(cpu, iqe->timestamp);
-                reset_cpu_from_bis(cpu, iqe->bis_entry);
-                cpu->pc = iqe->result_buffer;
-            }
+            DBG("INFO", "Should jump JUMP to %d", iqe->result_buffer);
+            flush_cpu_after(cpu, iqe->timestamp);
+            reset_cpu_from_bis(cpu, iqe->bis_entry);
+            cpu->pc = iqe->result_buffer;
 
             break;
         }
         case OP_JALP:
         {
-            iqe->result_buffer = iqe->imm + iqe->pc;
+            int jump_addr = iqe->imm + iqe->pc;
+            iqe->result_buffer = iqe->pc + 4;
 
             add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->result_buffer);
-            push_return_address(&cpu->predictor, iqe->result_buffer); // Push return address into return stack
+            // push_return_address(&cpu->predictor, iqe->result_buffer); // Push return address into return stack
 
-            if (iqe->next_pc != iqe->result_buffer)
-            {
-                DBG("INFO", "Should flush JALP %c", ' ');
-                flush_cpu_after(cpu, iqe->timestamp);
-                reset_cpu_from_bis(cpu, iqe->bis_entry);
-                cpu->pc = iqe->result_buffer;
-            }
+            DBG("INFO", "Should jump JALP to %d with return address %d", jump_addr, iqe->result_buffer);
+            flush_cpu_after(cpu, iqe->timestamp);
+            reset_cpu_from_bis(cpu, iqe->bis_entry);
+            cpu->pc = jump_addr;
+
             break;
         }
         case OP_RET:
@@ -706,6 +709,7 @@ bool commit(Cpu *cpu)
     {
         if (iqe.op == OP_HALT)
         {
+            reset_cpu_from_bis(cpu, iqe.bis_entry);
             halt = true;
         }
 
@@ -1051,7 +1055,8 @@ bool simulate_cycle(Cpu *cpu)
     print_stages(cpu);
     print_data_memory(cpu);
     print_registers(cpu);
-    print_rename_table(cpu->rt);
+    // print_rename_table(cpu->rt);
+    print_predictor(cpu->predictor);
 
     // Forward data to next stage
     forward_pipeline(cpu);

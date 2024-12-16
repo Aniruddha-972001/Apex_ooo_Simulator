@@ -101,3 +101,20 @@ int pop_return_address(Predictor *p) {
     p->rs.len -= 1;
     return p->rs.return_addresses[p->rs.len];
 }
+
+void print_predictor(Predictor p) {
+    printf("Predictor: [\n");
+    for (int i = 0; i < p.len; i++) {
+        PredictorEntry entry = p.table[i];
+
+        printf("    PredictorEntry { pc: %d, target: %d }\n", entry.pc, entry.target_address);
+    }
+    printf("    ]\n");
+
+    ReturnStack rs = p.rs;
+    printf("Return Stack: [\n");
+    for (int i = 0; i < rs.len; i++) {
+        printf("    Return { pc: %d }", rs.return_addresses[i]);
+    }
+    printf("    ]\n");
+}
