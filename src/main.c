@@ -40,9 +40,9 @@ int get_command(char *input)
     return -1;
 }
 
-void repl(const char *code_file)
+void repl(char *code_file)
 {
-    Cpu *cpu;
+    Cpu cpu;
     int is_done = 0;
 
     while (TRUE) {
@@ -71,7 +71,7 @@ void repl(const char *code_file)
                     printf("Simulation completed. 'Initialize' again to restart. Or enter 'q' to Quit.\n");
                     break;
                 }
-                is_done = simulate_cycle(cpu);
+                is_done = simulate_cycle(&cpu);
             } 
             break;
         case SIMULATE: {
@@ -91,7 +91,7 @@ void repl(const char *code_file)
                 printf("Simulating %d cycles..\n", n);
 
                 while (n > 0) {
-                    is_done = simulate_cycle(cpu);
+                    is_done = simulate_cycle(&cpu);
                     n -= 1;
 
                     if (is_done) break; // Prematurely stop if simulation completed
@@ -99,7 +99,7 @@ void repl(const char *code_file)
             }
             break;
         case DISPLAY:
-            display(cpu);
+            display(&cpu);
             break;
         case SHOW_MEM: {
                 char *token = strtok(NULL, " "); // Number of simulations to perform
@@ -111,7 +111,7 @@ void repl(const char *code_file)
 
                 int address = atoi(token);
 
-                show_mem(cpu, address);
+                show_mem(&cpu, address);
             }
             break;
         case SET_MEM: {
@@ -122,7 +122,7 @@ void repl(const char *code_file)
                 }
                 trim(token);
 
-                set_memory(cpu, token);
+                set_memory(&cpu, token);
             }
             break;
         case QUIT:

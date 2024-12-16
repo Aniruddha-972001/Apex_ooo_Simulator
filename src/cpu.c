@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "cpu.h"
 #include "instruction.h"
@@ -1101,7 +1102,7 @@ void set_memory(Cpu *cpu, char *filename){
     }
     
     FILE *fp;
-    ssize_t nread;
+    size_t nread;
     size_t len = 0;
     char *line = NULL;
     int data_memory_idx = 0;
