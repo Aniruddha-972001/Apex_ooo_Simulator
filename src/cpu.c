@@ -1028,7 +1028,7 @@ void print_data_memory(const Cpu *cpu)
 {
     printf("Data Memory:\n");
     // Print first 10 memory locations
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 20; i++)
     {
         printf("    [%d] = %d\n", i, cpu->memory[i]);
     }
