@@ -130,7 +130,7 @@ void flush_cpu_after(Cpu *cpu, int timestamp)
 void reset_cpu_from_bis(Cpu *cpu, BisEntry bis_entry)
 {
     cpu->rt = bis_entry.rt;
-    cpu->predictor = bis_entry.p;
+    cpu->predictor.rs = bis_entry.p.rs;
 
     memcpy(cpu->fw_ucrf, bis_entry.fw_ucrf, sizeof(Cc) * CC_REGS_COUNT);
     memcpy(cpu->fw_ucrf_valid, bis_entry.fw_ucrf_valid, sizeof(int) * CC_REGS_COUNT);
@@ -202,23 +202,22 @@ void fetch(Cpu *cpu)
             if (predicted)
             {
                 cpu->pc = entry.target_address;
+                
+                push_return_address(&cpu->predictor, inst.pc + 4);
             }
-            else
-            {
-                // Default prediction is always taken
-                cpu->pc = inst.pc + inst.imm;
-            }
-
-            int return_address = inst.pc + 4;
-            push_return_address(&cpu->predictor, return_address);
 
             break;
         }
 
         case OP_RET:
         {
-            int return_address = pop_return_address(&cpu->predictor);
-            cpu->pc = return_address;
+            // Only if a predictor entry for this RET exists in the predictor table we
+            // change CPU pc.
+            PredictorEntry entry = {0};
+            if (get_prediction(&cpu->predictor, inst.pc, &entry)) {
+                int return_address = pop_return_address(&cpu->predictor);
+                cpu->pc = return_address;
+            }
             break;
         }
 
@@ -581,22 +580,26 @@ void int_fu(Cpu *cpu)
             int jump_addr = iqe->imm + iqe->pc;
             iqe->result_buffer = iqe->pc + 4;
 
-            add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, iqe->result_buffer);
-            // push_return_address(&cpu->predictor, iqe->result_buffer); // Push return address into return stack
+            if (iqe->next_pc != jump_addr) {
+                DBG("INFO", "Should jump JALP to %d with return address %d", jump_addr, iqe->result_buffer);
+                flush_cpu_after(cpu, iqe->timestamp);
+                reset_cpu_from_bis(cpu, iqe->bis_entry);
+                cpu->pc = jump_addr;
+            }
 
-            DBG("INFO", "Should jump JALP to %d with return address %d", jump_addr, iqe->result_buffer);
-            flush_cpu_after(cpu, iqe->timestamp);
-            reset_cpu_from_bis(cpu, iqe->bis_entry);
-            cpu->pc = jump_addr;
+            PredictorEntry e = {0};
+            if (!get_prediction(&cpu->predictor, iqe->pc, &e)) {
+                // Only push the return address in IntFu if this JALP appeared for the first time
+                push_return_address(&cpu->predictor, iqe->result_buffer); // Push return address into return stack
+            }
+            add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, jump_addr);
 
             break;
         }
         case OP_RET:
         {
             iqe->result_buffer = iqe->rs1_value;
-
-            add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, -1); // No target address for RET
-
+            
             if (iqe->next_pc != iqe->result_buffer)
             {
                 DBG("INFO", "Should flush RET %c", ' ');
@@ -604,6 +607,16 @@ void int_fu(Cpu *cpu)
                 reset_cpu_from_bis(cpu, iqe->bis_entry);
                 cpu->pc = iqe->result_buffer;
             }
+
+            // If A prediction of the RET was not there in the predictor table
+            PredictorEntry e = {0};
+            if (!get_prediction(&cpu->predictor, iqe->pc, &e)) {
+                // Need to pop an entry from return stack
+                pop_return_address(&cpu->predictor);
+            }
+
+            add_predictor_entry(&cpu->predictor, iqe->pc, iqe->op, -1); // No target address for RET
+
             break;
         }
         case OP_NOP:

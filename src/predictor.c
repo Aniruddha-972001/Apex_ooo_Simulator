@@ -114,7 +114,7 @@ void print_predictor(Predictor p) {
     ReturnStack rs = p.rs;
     printf("Return Stack: [\n");
     for (int i = 0; i < rs.len; i++) {
-        printf("    Return { pc: %d }", rs.return_addresses[i]);
+        printf("    Return { pc: %d }\n", rs.return_addresses[i]);
     }
     printf("    ]\n");
 }
