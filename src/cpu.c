@@ -179,16 +179,13 @@ void fetch(Cpu *cpu)
             if (predicted)
             {
                 cpu->pc = entry.target_address;
-            }
-            else
-            {
+
                 // Default prediction
                 if (inst.imm < 0)
                 {
                     // Negative offset is always taken
                     cpu->pc = inst.pc + inst.imm;
                 }
-                // Positive offset will continue to next instruction
             }
 
             break;
